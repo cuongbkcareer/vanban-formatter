@@ -80,6 +80,7 @@ export function mountTemplates(host: Host, status: Status): void {
         r.name = input.value;
       });
       const info = document.createElement('div');
+      info.className = 'info';
       info.textContent = summarize(r);
       div.append(input, info);
       box.append(div);
@@ -187,9 +188,10 @@ export function mountTemplates(host: Host, status: Status): void {
     result.replaceChildren();
     const head = document.createElement('p');
     if (r.issues.length === 0 && r.page.length === 0 && r.tables.length === 0) {
-      head.className = 'ok';
+      head.className = 'summary ok';
       head.textContent = `Đạt mẫu “${profile.name}”: ${r.paragraphs} đoạn đều đúng định dạng.`;
     } else {
+      head.className = 'summary';
       head.textContent = `Theo mẫu “${profile.name}”: ${r.issues.length}/${r.paragraphs} đoạn lệch định dạng, ${r.tables.length} bảng sai khung, ${r.page.length} lỗi trang.`;
     }
     result.append(head);

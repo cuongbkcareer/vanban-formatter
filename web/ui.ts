@@ -246,4 +246,14 @@ export function mountUI(host: Host): void {
     status('Đã xoá thông tin cơ quan đã nhớ.');
   });
   mountTemplates(host, status);
+
+  // Chuyển mục: "Chuẩn hoá" và "Mẫu định dạng".
+  const tabIds = ['format', 'template'];
+  const showTab = (name: string): void => {
+    for (const t of tabIds) {
+      $(`tab-${t}`).setAttribute('aria-selected', String(t === name));
+      $(`pane-${t}`).hidden = t !== name;
+    }
+  };
+  for (const t of tabIds) $(`tab-${t}`).addEventListener('click', () => showTab(t));
 }

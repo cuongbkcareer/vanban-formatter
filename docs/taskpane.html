@@ -6,133 +6,316 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://appsforoffice.microsoft.com; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.microsoft.com https://*.office.com https://*.office365.com https://*.officeapps.live.com; form-action 'none'; base-uri 'none'">
 <title>Chuẩn hoá văn bản hành chính (NĐ 30/2020)</title>
 <style>
-  :root { color-scheme: light dark; --b: #c9ccd1; --accent: #1a56c4; --warn: #fff4cc; }
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --surface: #f5f6f8;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #636c76;
+    --line: #dfe2e7;
+    --accent: #185abd;
+    --accent-hover: #134a9c;
+    --accent-soft: #e8f0fc;
+    --ok: #1a7f37;
+    --ok-soft: #e6f4ea;
+    --err: #c62828;
+    --err-soft: #fdecea;
+    --warn-line: #e0a100;
+    --warn-soft: #fff7df;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b1d21;
+      --surface: #24272c;
+      --card: #202328;
+      --text: #e8eaed;
+      --muted: #9aa2ad;
+      --line: #383c43;
+      --accent: #6ea8fe;
+      --accent-hover: #8dbaff;
+      --accent-soft: #263449;
+      --ok: #5fcf80;
+      --ok-soft: #1f3327;
+      --err: #ff8a80;
+      --err-soft: #402523;
+      --warn-line: #d9a520;
+      --warn-soft: #3a3320;
+    }
+  }
   * { box-sizing: border-box; }
-  body { font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0 auto; max-width: 900px; padding: 14px; }
-  h1 { font-size: 18px; margin: 0 0 4px; }
-  .sub { color: #666; margin: 0 0 12px; font-size: 13px; }
-  .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border: 1px solid var(--b); border-radius: 10px; margin: 2px 4px 0 0; font-weight: normal; }
-  textarea { width: 100%; min-height: 200px; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; padding: 8px; border: 1px solid var(--b); border-radius: 6px; background: transparent; color: inherit; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-top: 10px; }
-  label { display: block; font-size: 12px; color: #666; }
-  input, select { width: 100%; padding: 5px 7px; font: inherit; border: 1px solid var(--b); border-radius: 6px; background: transparent; color: inherit; }
-  button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--b); cursor: pointer; background: transparent; color: inherit; }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  button.big { width: 100%; font-size: 16px; padding: 14px 18px; font-weight: 600; }
-  button:disabled { opacity: .6; cursor: progress; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  #src { margin: 0 0 12px; }
-  #quick-wrap { margin: 12px 0 0; }
-  #status { min-height: 1.4em; margin: 10px 0 0; font-size: 14px; }
-  #status[data-kind="error"] { color: #b3261e; }
-  .hint { color: #666; font-size: 12px; margin: 8px 0 0; }
-  .warnings { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
+  [hidden], .hidden { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0 auto;
+    max-width: 720px;
+    padding: 16px 16px 32px;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  body[data-host="word"] { max-width: none; padding: 14px 14px 28px; }
+
+  /* ---------- Đầu trang ---------- */
+  .top { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    flex: none; width: 38px; height: 38px; border-radius: 10px;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-weight: 700; font-size: 15px; letter-spacing: .02em;
+  }
+  h1 { font-size: 17px; line-height: 1.25; margin: 0; font-weight: 650; }
+  .sub { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+  .privacy {
+    display: flex; align-items: center; gap: 6px;
+    margin: 12px 0 0; padding: 7px 10px; border-radius: 8px;
+    background: var(--ok-soft); color: var(--ok); font-size: 12.5px; font-weight: 500;
+  }
+  .privacy svg { flex: none; }
+
+  /* ---------- Thẻ chuyển mục ---------- */
+  .tabs { display: flex; gap: 4px; margin: 16px 0 0; padding: 3px; background: var(--surface); border-radius: 10px; }
+  .tabs button {
+    flex: 1; border: 0; background: transparent; color: var(--muted);
+    padding: 7px 8px; border-radius: 8px; font-weight: 600; font-size: 13px;
+  }
+  .tabs button:hover { color: var(--text); background: transparent; }
+  .tabs button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.14); }
+  .pane { margin-top: 14px; }
+
+  /* ---------- Trạng thái ---------- */
+  #status {
+    margin: 14px 0 0; padding: 9px 12px; border-radius: 8px;
+    background: var(--accent-soft); border-left: 3px solid var(--accent);
+    font-size: 13px; overflow-wrap: anywhere;
+  }
+  #status:empty { display: none; }
+  #status[data-kind="error"] { background: var(--err-soft); border-left-color: var(--err); color: var(--err); }
+
+  /* ---------- Nút ---------- */
+  button {
+    font: inherit; font-size: 13px; line-height: 1.2;
+    padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--card); color: var(--text);
+    cursor: pointer; transition: background .12s, border-color .12s;
+  }
+  button:hover { background: var(--surface); }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  @media (prefers-color-scheme: dark) { button.primary { color: #0d1b2e; } }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .card + button.big { margin-top: 12px; }
+  button.big { width: 100%; font-size: 15px; padding: 13px 16px; border-radius: 10px; }
+  button.link { border: 0; background: transparent; color: var(--muted); padding: 4px 2px; text-decoration: underline; }
+  button.link:hover { background: transparent; color: var(--err); }
+  button.danger:hover { color: var(--err); border-color: var(--err); }
+  button:disabled { opacity: .55; cursor: progress; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .row.grow > button { flex: 1 1 auto; }
+
+  /* ---------- Thẻ nội dung ---------- */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-top: 12px; }
+  .card:first-child { margin-top: 0; }
+  .card h2 { font-size: 13.5px; margin: 0 0 2px; font-weight: 650; }
+  .card h3 { font-size: 13px; margin: 14px 0 6px; font-weight: 650; }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
+  .card > .hint:first-of-type { margin-top: 2px; }
+
+  textarea, input, select {
+    width: 100%; font: inherit; color: inherit; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  }
+  textarea { min-height: 170px; resize: vertical; line-height: 1.5; }
+  textarea[readonly] { background: var(--surface); font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; }
+  label { display: block; font-size: 12px; color: var(--muted); font-weight: 500; }
+  label > input, label > select { margin-top: 4px; color: var(--text); font-weight: 400; }
+  select { appearance: none; padding-right: 28px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%; background-size: 5px 5px; background-repeat: no-repeat; }
+
+  /* ---------- Tuỳ chọn nâng cao ---------- */
+  details.card { padding: 0; }
+  details.card > summary { list-style: none; cursor: pointer; padding: 12px 14px; font-weight: 600; font-size: 13.5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  details.card > summary::-webkit-details-marker { display: none; }
+  details.card > summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s; margin-right: 3px; }
+  details.card[open] > summary::after { transform: rotate(-135deg); }
+  details.card > .body { padding: 0 14px 14px; }
+  .group { margin-top: 14px; }
+  .group:first-of-type { margin-top: 12px; }
+  .group-title { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 650; margin: 0 0 6px; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+
+  /* ---------- Cảnh báo ---------- */
+  .warnings { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
   .warnings:empty { display: none; }
-  details { border: 1px solid var(--b); border-radius: 8px; padding: 8px 12px; margin: 16px 0 0; }
-  summary { cursor: pointer; font-weight: 600; }
-  .line { display: grid; grid-template-columns: 1fr 44px 28px; gap: 4px; padding: 4px; border-bottom: 1px solid var(--b); align-items: center; }
-  .line .sel { grid-column: 1 / -1; }
-  .line.low { background: var(--warn); color: #222; }
-  .line.low input, .line.low select { color: #222; }
-  .conf { text-align: right; color: #666; font-variant-numeric: tabular-nums; font-size: 12px; }
-  .del { padding: 2px 0; }
-  @media (min-width: 800px) {
-    .line { grid-template-columns: 240px 1fr 44px 28px; }
+  .warnings li { padding: 7px 10px; border-radius: 8px; background: var(--warn-soft); border-left: 3px solid var(--warn-line); font-size: 12.5px; }
+
+  /* ---------- Danh sách dòng nhận diện ---------- */
+  .line { display: grid; grid-template-columns: 1fr auto auto; gap: 6px 8px; padding: 8px 0; border-bottom: 1px solid var(--line); align-items: center; }
+  .line:last-child { border-bottom: 0; }
+  .line .sel { grid-column: 1 / -1; font-size: 12.5px; padding: 6px 28px 6px 8px; }
+  .line .txt { font-size: 13px; padding: 6px 8px; }
+  .line.low { background: var(--warn-soft); border-radius: 8px; padding: 8px; margin: 2px -8px; border-bottom: 0; box-shadow: inset 3px 0 0 var(--warn-line); }
+  .conf { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; min-width: 32px; text-align: right; }
+  .del { width: 28px; height: 28px; padding: 0; border-radius: 50%; line-height: 1; font-size: 16px; color: var(--muted); }
+  .del:hover { color: var(--err); border-color: var(--err); }
+  @media (min-width: 640px) {
+    .line { grid-template-columns: 230px 1fr auto auto; }
     .line .sel { grid-column: auto; }
   }
-  .hidden { display: none; }
-  h3 { font-size: 14px; margin: 14px 0 4px; }
-  .role { border: 1px solid var(--b); border-radius: 6px; padding: 6px 8px; margin: 6px 0; font-size: 12px; }
-  .role input { margin-bottom: 4px; }
-  .issue { padding: 4px 6px; border-bottom: 1px solid var(--b); font-size: 13px; cursor: default; }
-  .issue.go { cursor: pointer; }
-  .issue.go:hover { background: var(--warn); color: #222; }
-  .ok { color: #1b6e2f; font-weight: 600; }
-  body:not([data-host="word"]) .word-only { display: none; }
-  body[data-host="word"] .web-only { display: none; }
+
+  /* ---------- Mẫu định dạng ---------- */
+  .role { border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; margin: 8px 0 0; font-size: 12.5px; background: var(--surface); }
+  .role input { margin-bottom: 6px; font-weight: 600; background: var(--bg); }
+  .role .info { color: var(--muted); }
+
+  .summary { margin: 14px 0 0; padding: 9px 12px; border-radius: 8px; background: var(--warn-soft); border-left: 3px solid var(--warn-line); font-size: 13px; font-weight: 500; }
+  .summary.ok { background: var(--ok-soft); border-left-color: var(--ok); color: var(--ok); }
+  #t-result > .hint { margin: 8px 0 0; }
+  .issue { padding: 7px 4px; border-bottom: 1px solid var(--line); font-size: 12.5px; overflow-wrap: anywhere; }
+  .issue:last-child { border-bottom: 0; }
+  .issue.go { cursor: pointer; border-radius: 6px; padding: 7px 8px; }
+  .issue.go:hover { background: var(--accent-soft); }
+  .ok { color: var(--ok); font-weight: 600; }
+
+  /* ---------- Hiển thị theo nơi chạy ---------- */
+  body:not([data-host="word"]) .word-only { display: none !important; }
+  body[data-host="word"] .web-only { display: none !important; }
   body[data-host="unsupported"] main { display: none; }
-  #unsupported { display: none; padding: 16px; }
+  #unsupported { display: none; padding: 16px; border-radius: 10px; background: var(--err-soft); color: var(--err); }
   body[data-host="unsupported"] #unsupported { display: block; }
 </style>
 </head>
 <body>
 <div id="unsupported">Phiên bản Word này chưa hỗ trợ WordApi 1.3. Hãy cập nhật Microsoft 365, hoặc dùng bản web độc lập.</div>
 <main>
-<h1>Chuẩn hoá văn bản hành chính</h1>
-<p class="sub"><span class="badge">NĐ 30/2020/NĐ-CP</span><span class="badge">Không dùng AI, không gửi dữ liệu đi</span></p>
-
-<section id="src" class="web-only">
-  <textarea id="raw" placeholder="Dán nội dung văn bản vào đây…"></textarea>
-  <div class="row"><button id="sample">Nạp văn bản mẫu</button></div>
-</section>
-
-<div id="quick-wrap"><button class="primary big" id="quick">Chuẩn hoá</button></div>
-<p class="hint word-only">Xử lý phần bạn đang bôi đen. Không bôi đen thì xử lý cả tài liệu. Kết quả mở ra thành tài liệu mới, tài liệu gốc giữ nguyên.</p>
-<p id="status" role="status"></p>
-<ul class="warnings" id="warnings"></ul>
-
-<details id="advanced">
-  <summary>Tuỳ chọn nâng cao</summary>
-  <p class="hint">Chỉ cần khi công cụ nhận diện sai hoặc thiếu thông tin. Ô để trống: lấy từ văn bản. Ô đã điền: ghi đè. Cần bấm "Chuẩn hoá" lại sau khi điền.</p>
-  <div class="grid">
-    <label>Loại văn bản
-      <select id="o-type"><option value="">(tự nhận diện)</option></select>
-    </label>
-    <label>Cơ quan chủ quản (nếu có)<input id="o-parent" placeholder="ỦY BAN NHÂN DÂN TỈNH …"></label>
-    <label>Cơ quan ban hành<input id="o-issuer" placeholder="SỞ … (để trống: tự nhận diện)"></label>
-    <label>Địa danh<input id="o-place" placeholder="Hà Nội"></label>
-    <label>Ngày ban hành<input id="o-date" type="date"></label>
-    <label>Số, ký hiệu<input id="o-number" placeholder="12/QĐ-UBND"></label>
-    <label>Chức vụ người ký (dấu | để xuống dòng)<input id="o-stitle" placeholder="TM. ỦY BAN NHÂN DÂN | CHỦ TỊCH"></label>
-    <label>Họ tên người ký<input id="o-sname" placeholder="Nguyễn Văn A"></label>
+<header class="top">
+  <div class="logo" aria-hidden="true">VB</div>
+  <div>
+    <h1>Chuẩn hoá văn bản</h1>
+    <p class="sub">Thể thức theo NĐ 30/2020/NĐ-CP</p>
   </div>
-  <div class="row"><button id="analyze">Kiểm tra và sửa từng dòng</button><button id="o-forget" title="Xoá thông tin cơ quan mà công cụ đã nhớ trên máy này">Quên thông tin đã nhớ</button></div>
+</header>
+<p class="privacy">
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+  Xử lý ngay trên máy bạn. Không dùng AI, không gửi dữ liệu đi.
+</p>
 
-  <div id="review" class="hidden">
-    <p class="hint">Mỗi dòng đã được gán một nhãn. Dòng nền vàng là độ tin cậy thấp. Sửa nhãn nếu sai rồi bấm nút bên dưới.</p>
+<nav class="tabs" role="tablist" aria-label="Chức năng">
+  <button role="tab" id="tab-format" aria-controls="pane-format" aria-selected="true">Chuẩn hoá</button>
+  <button role="tab" id="tab-template" aria-controls="pane-template" aria-selected="false">Mẫu định dạng</button>
+</nav>
+
+<p id="status" role="status"></p>
+
+<!-- ======================= Chuẩn hoá ======================= -->
+<section id="pane-format" class="pane" role="tabpanel" aria-labelledby="tab-format">
+  <section id="src" class="web-only card">
+    <textarea id="raw" placeholder="Dán nội dung văn bản vào đây…" aria-label="Nội dung văn bản"></textarea>
+    <div class="row"><button id="sample">Nạp văn bản mẫu</button></div>
+  </section>
+
+  <button class="primary big" id="quick">Chuẩn hoá</button>
+  <p class="hint word-only">Xử lý phần bạn bôi đen, hoặc cả tài liệu nếu không bôi đen. Kết quả mở thành tài liệu mới, bản gốc giữ nguyên.</p>
+  <ul class="warnings" id="warnings"></ul>
+
+  <details id="advanced" class="card">
+    <summary>Thông tin văn bản</summary>
+    <div class="body">
+      <p class="hint">Không bắt buộc. Ô để trống thì công cụ tự lấy từ văn bản, ô đã điền thì dùng giá trị bạn nhập. Bấm "Chuẩn hoá" lại sau khi sửa.</p>
+      <div class="group">
+        <p class="group-title">Cơ quan</p>
+        <div class="fields">
+          <label>Cơ quan chủ quản (nếu có)<input id="o-parent" placeholder="ỦY BAN NHÂN DÂN TỈNH …"></label>
+          <label>Cơ quan ban hành<input id="o-issuer" placeholder="SỞ … (để trống: tự nhận diện)"></label>
+          <label>Địa danh<input id="o-place" placeholder="Hà Nội"></label>
+        </div>
+      </div>
+      <div class="group">
+        <p class="group-title">Văn bản</p>
+        <div class="fields">
+          <label>Loại văn bản
+            <select id="o-type"><option value="">(tự nhận diện)</option></select>
+          </label>
+          <label>Số, ký hiệu<input id="o-number" placeholder="12/QĐ-UBND"></label>
+          <label>Ngày ban hành<input id="o-date" type="date"></label>
+        </div>
+      </div>
+      <div class="group">
+        <p class="group-title">Người ký</p>
+        <div class="fields">
+          <label>Chức vụ (dấu | để xuống dòng)<input id="o-stitle" placeholder="TM. ỦY BAN NHÂN DÂN | CHỦ TỊCH"></label>
+          <label>Họ tên<input id="o-sname" placeholder="Nguyễn Văn A"></label>
+        </div>
+      </div>
+      <div class="row"><button id="o-forget" class="link" title="Xoá thông tin cơ quan mà công cụ đã nhớ trên máy này">Quên thông tin đã nhớ</button></div>
+    </div>
+  </details>
+
+  <div class="row"><button id="analyze">Xem và sửa nhận diện từng dòng</button></div>
+
+  <div id="review" class="card hidden">
+    <h2>Nhận diện từng dòng</h2>
+    <p class="hint">Mỗi dòng đã được gán một nhãn. Dòng nền vàng là độ tin cậy thấp. Sửa nhãn nếu sai, rồi tạo văn bản.</p>
     <div id="lines"></div>
     <div class="row">
       <button class="primary web-only" id="download">Tạo .docx từ danh sách này</button>
-      <button class="primary word-only" id="open-new">Mở thành tài liệu mới từ danh sách này</button>
+      <button class="primary word-only" id="open-new">Mở thành tài liệu mới</button>
       <button class="word-only" id="replace" title="Thử nghiệm: có thể không áp dụng lề trang và số trang">Thay nội dung tài liệu đang mở</button>
     </div>
   </div>
-</details>
+</section>
 
-<details id="templates">
-  <summary>Mẫu định dạng: học từ file mẫu, kiểm tra và sửa theo mẫu</summary>
-  <p class="hint">Dùng một file Word đã chuẩn làm mẫu (văn bản hành chính, giáo án, báo cáo, bất kỳ loại nào). Công cụ học cách trình bày rồi kiểm tra hoặc sửa tài liệu khác theo mẫu đó. Xử lý ngay trên máy bạn, không dùng AI, không gửi dữ liệu đi.</p>
-  <label>Mẫu đang dùng
-    <select id="t-active"><option value="">(chưa có mẫu)</option></select>
-  </label>
-  <div class="row">
-    <button id="t-learn-doc" class="word-only">Học từ tài liệu đang mở</button>
-    <button id="t-learn-file">Học từ file .docx…</button>
-    <button id="t-export">Xuất mẫu (.json)</button>
-    <button id="t-import">Nhập mẫu (.json)…</button>
-    <button id="t-delete">Xoá mẫu này</button>
+<!-- ======================= Mẫu định dạng ======================= -->
+<section id="pane-template" class="pane" role="tabpanel" aria-labelledby="tab-template" hidden>
+  <p class="hint" style="margin-top:0">Dùng một file Word đã chuẩn làm mẫu (văn bản hành chính, giáo án, báo cáo, loại nào cũng được). Công cụ học cách trình bày, rồi kiểm tra hoặc sửa tài liệu khác theo mẫu đó.</p>
+
+  <div class="card">
+    <h2>Mẫu đang dùng</h2>
+    <label class="sr" style="margin-top:8px">
+      <select id="t-active" aria-label="Mẫu đang dùng"><option value="">(chưa có mẫu)</option></select>
+    </label>
+    <div class="row">
+      <button id="t-export">Xuất (.json)</button>
+      <button id="t-import">Nhập (.json)…</button>
+      <button id="t-delete" class="danger">Xoá mẫu</button>
+    </div>
+    <textarea id="t-json" class="hidden" readonly style="min-height:90px;margin-top:10px" aria-label="Nội dung mẫu (.json) để sao chép"></textarea>
   </div>
+
+  <div class="card">
+    <h2>Tạo mẫu mới</h2>
+    <div class="row grow">
+      <button id="t-learn-doc" class="word-only primary">Học từ tài liệu đang mở</button>
+      <button id="t-learn-file">Học từ file .docx…</button>
+    </div>
+
+    <div id="t-learned" class="hidden">
+      <h3>Mẫu vừa học</h3>
+      <label>Tên mẫu<input id="t-name" placeholder="Giáo án môn Toán"></label>
+      <p class="hint">Các đoạn của file mẫu được gom thành những vai trò. Đổi tên cho dễ nhớ rồi lưu.</p>
+      <div id="t-roles"></div>
+      <div class="row"><button class="primary" id="t-save">Lưu mẫu và dùng ngay</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Kiểm tra và sửa theo mẫu</h2>
+    <p class="hint">Chọn mẫu ở trên rồi kiểm tra một tài liệu.</p>
+    <div class="row grow">
+      <button id="t-check-doc" class="word-only">Kiểm tra tài liệu đang mở</button>
+      <button id="t-check-file">Kiểm tra file .docx…</button>
+    </div>
+    <div class="row">
+      <button id="t-fix" class="primary word-only" style="width:100%" title="Sửa trực tiếp trong tài liệu đang mở. Có thể hoàn tác bằng Cmd+Z / Ctrl+Z.">Sửa tự động theo mẫu</button>
+    </div>
+    <div id="t-result"></div>
+  </div>
+
   <input type="file" id="t-file-docx" accept=".docx" class="hidden">
   <input type="file" id="t-file-json" accept=".json,application/json" class="hidden">
   <input type="file" id="t-file-check" accept=".docx" class="hidden">
-  <textarea id="t-json" class="hidden" readonly style="min-height:90px" aria-label="Nội dung mẫu (.json) để sao chép"></textarea>
-
-  <div id="t-learned" class="hidden">
-    <h3>Mẫu vừa học</h3>
-    <label>Tên mẫu<input id="t-name" placeholder="Giáo án môn Toán"></label>
-    <p class="hint">Công cụ gom các đoạn của file mẫu thành những vai trò. Bạn đổi tên cho dễ nhớ, rồi bấm Lưu mẫu.</p>
-    <div id="t-roles"></div>
-    <div class="row"><button class="primary" id="t-save">Lưu mẫu này và dùng ngay</button></div>
-  </div>
-
-  <h3>Dùng mẫu đang chọn</h3>
-  <div class="row">
-    <button id="t-check-doc" class="word-only">Kiểm tra tài liệu đang mở</button>
-    <button id="t-check-file">Kiểm tra file .docx…</button>
-    <button id="t-fix" class="primary word-only" title="Sửa trực tiếp trong tài liệu đang mở. Có thể hoàn tác bằng Cmd+Z / Ctrl+Z.">Sửa tự động theo mẫu</button>
-  </div>
-  <div id="t-result"></div>
-</details>
+</section>
 </main>
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 <script src="taskpane.js"></script>
