@@ -1,10 +1,13 @@
 import { readDocx, type DocFormat } from '../src/docx-read';
 import {
   checkAgainstProfile,
+  describeTableSpec,
   FIELD_NAMES,
   learnProfile,
   planFixes,
+  planTableFixes,
   showValue,
+  TABLE_FIELD_NAMES,
   type FormatProfile,
   type Role,
 } from '../src/learn/profile';
@@ -81,7 +84,13 @@ export function mountTemplates(host: Host, status: Status): void {
       div.append(input, info);
       box.append(div);
     }
-    status(`Đã học ${p.roles.length} vai trò từ ${p.createdFrom ?? 'tài liệu mẫu'}. Đổi tên cho dễ nhớ rồi bấm Lưu mẫu.`);
+    for (const spec of p.tables ?? []) {
+      const div = document.createElement('div');
+      div.className = 'role';
+      div.textContent = describeTableSpec(spec);
+      box.append(div);
+    }
+    status(`Đã học ${p.roles.length} vai trò${p.tables?.length ? ` và ${p.tables.length} khung bảng` : ''} từ ${p.createdFrom ?? 'tài liệu mẫu'}. Đổi tên cho dễ nhớ rồi bấm Lưu mẫu.`);
   }
 
   async function learnFrom(doc: DocFormat, label: string): Promise<void> {
@@ -177,11 +186,11 @@ export function mountTemplates(host: Host, status: Status): void {
     const r = checkAgainstProfile(profile, doc);
     result.replaceChildren();
     const head = document.createElement('p');
-    if (r.issues.length === 0 && r.page.length === 0) {
+    if (r.issues.length === 0 && r.page.length === 0 && r.tables.length === 0) {
       head.className = 'ok';
       head.textContent = `Đạt mẫu “${profile.name}”: ${r.paragraphs} đoạn đều đúng định dạng.`;
     } else {
-      head.textContent = `Theo mẫu “${profile.name}”: ${r.issues.length}/${r.paragraphs} đoạn lệch định dạng, ${r.page.length} lỗi trang.`;
+      head.textContent = `Theo mẫu “${profile.name}”: ${r.issues.length}/${r.paragraphs} đoạn lệch định dạng, ${r.tables.length} bảng sai khung, ${r.page.length} lỗi trang.`;
     }
     result.append(head);
     if (!doc.page) {
@@ -195,6 +204,20 @@ export function mountTemplates(host: Host, status: Status): void {
       d.className = 'issue';
       d.textContent = `Trang: ${pg.field} là ${pg.actual} (mẫu: ${pg.expected}). Chỉnh trong Bố cục > Lề.`;
       result.append(d);
+    }
+    for (const ti of r.tables) {
+      const d = document.createElement('div');
+      d.className = 'issue';
+      d.textContent = `Bảng ${ti.tableIndex + 1} (${ti.cols} cột): ${ti.diffs
+        .map((x) => `${TABLE_FIELD_NAMES[x.field]} ${x.actual} (mẫu: ${x.expected})`)
+        .join('; ')}`;
+      result.append(d);
+    }
+    if (r.unmatchedTables.length) {
+      const m = document.createElement('p');
+      m.className = 'hint';
+      m.textContent = `${r.unmatchedTables.length} bảng có số cột khác với bảng trong mẫu nên chưa kiểm tra khung (bảng ${r.unmatchedTables.map((x) => x + 1).join(', ')}). Muốn kiểm tra, hãy thêm một bảng cùng số cột vào file mẫu rồi học lại.`;
+      result.append(m);
     }
     for (const i of r.issues.slice(0, 300)) {
       const d = document.createElement('div');
@@ -235,13 +258,17 @@ export function mountTemplates(host: Host, status: Status): void {
     try {
       const doc = await host.readFormat();
       const items = planFixes(profile, doc);
-      if (items.length === 0) {
+      const tableItems = planTableFixes(profile, doc);
+      if (items.length === 0 && tableItems.length === 0) {
         runCheck(doc, true);
         return;
       }
-      const res = await host.applyFixes(items, profile);
+      const res = items.length ? await host.applyFixes(items, profile) : { applied: 0, skipped: 0, capsNotApplied: 0 };
+      // Sửa bảng sau cùng: đổi độ rộng/viền có thể làm thay đổi bố cục các đoạn trong bảng.
+      const tres = tableItems.length && host.applyTableFixes ? await host.applyTableFixes(tableItems) : { applied: 0, notes: [] as string[] };
       const notes = [
-        `Đã sửa ${res.applied} đoạn theo mẫu “${profile.name}”.`,
+        `Đã sửa ${res.applied} đoạn${tableItems.length ? ` và ${tres.applied}/${tableItems.length} bảng` : ''} theo mẫu “${profile.name}”.`,
+        ...tres.notes,
         res.skipped ? `Bỏ qua ${res.skipped} đoạn (nội dung đã thay đổi hoặc không khớp).` : '',
         res.capsNotApplied ? `${res.capsNotApplied} đoạn cần chữ in hoa: hãy tự gõ hoa (công cụ không đổi chữ của bạn).` : '',
         'Có thể hoàn tác bằng Cmd+Z / Ctrl+Z.',

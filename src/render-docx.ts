@@ -6,6 +6,7 @@ import {
   LineRuleType,
   Packer,
   PageNumber,
+  ShadingType,
   Paragraph,
   Table,
   TableCell,
@@ -19,6 +20,7 @@ import {
 import type {
   Align,
   BlockNode,
+  BorderSpec,
   DocumentIR,
   ParagraphNode,
   RuleNode,
@@ -105,32 +107,69 @@ const NO_BORDERS = {
   right: NO_BORDER,
 };
 
+const BORDER_STYLE = {
+  single: BorderStyle.SINGLE,
+  double: BorderStyle.DOUBLE,
+  dashed: BorderStyle.DASHED,
+  dotted: BorderStyle.DOTTED,
+} as const;
+
+function border(b: BorderSpec | null | undefined) {
+  if (!b) return NO_BORDER;
+  return { style: BORDER_STYLE[b.style ?? 'single'], size: Math.max(2, Math.round(b.sizePt * 8)), color: b.color };
+}
+
+const V_ALIGN = {
+  top: VerticalAlign.TOP,
+  center: VerticalAlign.CENTER,
+  bottom: VerticalAlign.BOTTOM,
+} as const;
+
 function renderTable(node: TableNode, ctx: Ctx): Table {
   const widths = (node.rows[0] ?? []).map((c) => mmToTwip(c.widthMm));
   const total = widths.reduce((a, b) => a + b, 0);
+  const fm = node.format;
+  const b = fm?.borders;
+  const mar = fm?.cellMarginMm;
+  const cellMargins = mar
+    ? { top: mmToTwip(mar[0]), right: mmToTwip(mar[1]), bottom: mmToTwip(mar[2]), left: mmToTwip(mar[3]) }
+    : { top: 0, bottom: 0, left: mmToTwip(1.5), right: mmToTwip(1.5) };
+  const cellBorders = {
+    top: NO_BORDER,
+    bottom: NO_BORDER,
+    left: NO_BORDER,
+    right: NO_BORDER,
+  };
   return new Table({
     width: { size: total, type: WidthType.DXA },
     columnWidths: widths,
     layout: TableLayoutType.FIXED,
+    // Lề trong ô đặt ở mức bảng (w:tblCellMar) để Word hiển thị và đọc lại đúng như một thuộc tính của bảng.
+    margins: { marginUnitType: WidthType.DXA, ...cellMargins },
+    ...(fm?.align ? { alignment: ALIGN[fm.align] } : {}),
     borders: {
-      top: NO_BORDER,
-      bottom: NO_BORDER,
-      left: NO_BORDER,
-      right: NO_BORDER,
-      insideHorizontal: NO_BORDER,
-      insideVertical: NO_BORDER,
+      top: border(b?.top),
+      bottom: border(b?.bottom),
+      left: border(b?.left),
+      right: border(b?.right),
+      insideHorizontal: border(b?.insideH),
+      insideVertical: border(b?.insideV),
     },
     rows: node.rows.map(
-      (cells) =>
+      (cells, rowIdx) =>
         new TableRow({
           cantSplit: node.cantSplit,
+          ...(rowIdx === 0 && fm?.headerRepeat ? { tableHeader: true } : {}),
           children: cells.map(
             (cell) =>
               new TableCell({
                 width: { size: mmToTwip(cell.widthMm), type: WidthType.DXA },
-                borders: NO_BORDERS,
-                verticalAlign: VerticalAlign.TOP,
-                margins: { top: 0, bottom: 0, left: mmToTwip(1.5), right: mmToTwip(1.5) },
+                // Viền của bảng được áp bằng tblBorders; ô không ghi đè để Word dùng viền bảng.
+                ...(fm?.borders ? {} : { borders: cellBorders }),
+                verticalAlign: V_ALIGN[fm?.vAlign ?? 'top'],
+                ...(rowIdx === 0 && fm?.headerShading
+                  ? { shading: { type: ShadingType.CLEAR, fill: fm.headerShading, color: 'auto' } }
+                  : {}),
                 children: renderBlocks(cell.children, cell.widthMm, ctx),
               }),
           ),

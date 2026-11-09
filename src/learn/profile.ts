@@ -11,7 +11,7 @@
  * Không dùng AI hay mạng. Cấu trúc nội dung hoàn toàn mới vẫn phụ thuộc vào việc dấu hiệu văn bản có phân biệt
  * được các vai trò hay không; kết quả luôn cho người dùng xem lại.
  */
-import type { DocFormat, PageFmt, ParaFmt } from '../docx-read';
+import type { BorderFmt, DocFormat, PageFmt, ParaFmt, TableBorders, TableFmt } from '../docx-read';
 import { isAllCaps, wordCount } from '../text';
 
 export type Align = 'left' | 'center' | 'right' | 'justify';
@@ -66,6 +66,20 @@ export interface PageSpec {
   marginRightMm: number;
 }
 
+/** Khung bảng học từ file mẫu, áp cho các bảng cùng số cột. Độ rộng cột lưu theo tỉ lệ để khớp mọi khổ giấy. */
+export interface TableSpec {
+  cols: number;
+  /** Số hàng của bảng trong file mẫu (chỉ để tham khảo) */
+  rows: number;
+  colRatios: number[];
+  align: 'left' | 'center' | 'right';
+  borders: TableBorders;
+  headerShading: string | null;
+  headerRepeat: boolean;
+  vAlign: 'top' | 'center' | 'bottom';
+  cellMarginMm: [number, number, number, number] | null;
+}
+
 export interface FormatProfile {
   version: 1;
   name: string;
@@ -73,6 +87,8 @@ export interface FormatProfile {
   page?: PageSpec;
   font?: string;
   roles: Role[];
+  /** Khung bảng, một mẫu cho mỗi số cột. Hồ sơ cũ không có trường này. */
+  tables?: TableSpec[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -306,8 +322,37 @@ export function learnProfile(doc: DocFormat, name = 'Mẫu của tôi', createdF
   const font = mode(paras.map((p) => dominantFont(p, doc.defaultFont)).filter((x): x is string => !!x));
   if (font) profile.font = font;
   if (doc.page) profile.page = pageSpec(doc.page);
+  const specs = learnTables(doc.tables);
+  if (specs.length) profile.tables = specs;
   void total;
   return profile;
+}
+
+export function tableSpecOf(t: TableFmt): TableSpec {
+  const sum = t.colWidthsMm.reduce((a, b) => a + b, 0) || 1;
+  return {
+    cols: t.colWidthsMm.length,
+    rows: t.rows,
+    colRatios: t.colWidthsMm.map((w) => Math.round((w / sum) * 100) / 100),
+    align: t.align,
+    borders: t.borders,
+    headerShading: t.headerShading,
+    headerRepeat: t.headerRepeat,
+    vAlign: t.vAlign,
+    cellMarginMm: t.cellMarginMm ? (t.cellMarginMm.map((x) => round(x, 0.1)) as [number, number, number, number]) : null,
+  };
+}
+
+/** Mỗi số cột giữ một bảng đại diện: bảng nhiều hàng nhất trong file mẫu. */
+function learnTables(tables: TableFmt[]): TableSpec[] {
+  const byCols = new Map<number, TableFmt>();
+  for (const t of tables) {
+    const n = t.colWidthsMm.length;
+    if (n === 0) continue;
+    const cur = byCols.get(n);
+    if (!cur || t.rows > cur.rows) byCols.set(n, t);
+  }
+  return [...byCols.values()].map(tableSpecOf).sort((a, b) => a.cols - b.cols);
 }
 
 function pageSpec(p: PageFmt): PageSpec {
@@ -426,10 +471,38 @@ export interface PageIssue {
   actual: string;
 }
 
+export type TableField = 'colRatios' | 'align' | 'borders' | 'headerShading' | 'headerRepeat' | 'vAlign' | 'cellMarginMm';
+
+export const TABLE_FIELD_NAMES: Record<TableField, string> = {
+  colRatios: 'độ rộng các cột',
+  align: 'căn bảng',
+  borders: 'viền bảng',
+  headerShading: 'màu nền hàng tiêu đề',
+  headerRepeat: 'lặp lại hàng tiêu đề ở mỗi trang',
+  vAlign: 'căn dọc trong ô',
+  cellMarginMm: 'lề trong ô',
+};
+
+export interface TableDiff {
+  field: TableField;
+  expected: string;
+  actual: string;
+}
+
+export interface TableIssue {
+  /** Chỉ số bảng (theo thứ tự trong tài liệu, tính từ 0) */
+  tableIndex: number;
+  cols: number;
+  diffs: TableDiff[];
+}
+
 export interface CheckResult {
   paragraphs: number;
   issues: ParagraphIssue[];
   page: PageIssue[];
+  tables: TableIssue[];
+  /** Bảng không có mẫu cùng số cột nên chưa kiểm tra */
+  unmatchedTables: number[];
   /** Vai trò đã đoán cho từng đoạn không trống (theo chỉ số đoạn) */
   roleOf: Map<number, string>;
 }
@@ -460,7 +533,8 @@ export function checkAgainstProfile(profile: FormatProfile, doc: DocFormat): Che
     cmp('lề trái', e.marginLeftMm, a.marginLeftMm, 0.7);
     cmp('lề phải', e.marginRightMm, a.marginRightMm, 0.7);
   }
-  return { paragraphs: checked, issues, page, roleOf };
+  const { issues: tableIssues, unmatched } = checkTables(profile, doc);
+  return { paragraphs: checked, issues, page, tables: tableIssues.map(({ fix: _fix, ...t }) => t), unmatchedTables: unmatched, roleOf };
 }
 
 /** Kế hoạch sửa: với mỗi đoạn lệch, các thuộc tính cần đặt lại. */
@@ -478,4 +552,126 @@ export function planFixes(profile: FormatProfile, doc: DocFormat): FixItem[] {
     for (const d of i.diffs) (set as Record<string, unknown>)[d.field] = d.expected;
     return { index: i.index, text: i.text, roleId: i.roleId, set };
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* Khung bảng: so sánh và kế hoạch sửa                                  */
+/* ------------------------------------------------------------------ */
+
+const SIDE_NAMES: Record<keyof TableBorders, string> = {
+  top: 'trên',
+  bottom: 'dưới',
+  left: 'trái',
+  right: 'phải',
+  insideH: 'ngang trong',
+  insideV: 'dọc trong',
+};
+
+const showBorder = (b: BorderFmt | null): string => (b ? `${b.sizePt} pt #${b.color}${b.style !== 'single' ? ` ${b.style}` : ''}` : 'không');
+
+function describeBorders(b: TableBorders): string {
+  const sides = Object.keys(SIDE_NAMES) as (keyof TableBorders)[];
+  if (sides.every((s) => !b[s])) return 'không viền';
+  const same = (x: BorderFmt | null, y: BorderFmt | null): boolean => (x === null && y === null) || (!!x && !!y && showBorder(x) === showBorder(y));
+  if (sides.every((s) => same(b[s], b.top))) return `viền mọi cạnh ${showBorder(b.top)}`;
+  return sides.map((s) => `${SIDE_NAMES[s]}: ${showBorder(b[s])}`).join(', ');
+}
+
+function bordersEqual(a: TableBorders, b: TableBorders): boolean {
+  for (const s of Object.keys(SIDE_NAMES) as (keyof TableBorders)[]) {
+    const x = a[s];
+    const y = b[s];
+    if (!x && !y) continue;
+    if (!x || !y) return false;
+    if (Math.abs(x.sizePt - y.sizePt) > 0.25 || x.color !== y.color || x.style !== y.style) return false;
+  }
+  return true;
+}
+
+const WORD_DEFAULT_MARGIN: [number, number, number, number] = [0, 1.9, 0, 1.9];
+const ALIGN_TABLE: Record<string, string> = { left: 'trái', center: 'giữa', right: 'phải' };
+const V_NAMES: Record<string, string> = { top: 'trên', center: 'giữa', bottom: 'dưới' };
+
+/** Các khác biệt giữa khung bảng mẫu và bảng thực tế, kèm giá trị cần đặt lại. */
+export function diffTable(spec: TableSpec, t: TableFmt): { diffs: TableDiff[]; set: Partial<TableSpec> } {
+  const diffs: TableDiff[] = [];
+  const set: Partial<TableSpec> = {};
+  const sum = t.colWidthsMm.reduce((a, b) => a + b, 0) || 1;
+  const ratios = t.colWidthsMm.map((w) => w / sum);
+  if (ratios.length === spec.colRatios.length && ratios.some((r, i) => Math.abs(r - (spec.colRatios[i] as number)) > 0.04)) {
+    diffs.push({
+      field: 'colRatios',
+      expected: spec.colRatios.map((r) => `${Math.round(r * 100)}%`).join(' / '),
+      actual: ratios.map((r) => `${Math.round(r * 100)}%`).join(' / '),
+    });
+    set.colRatios = spec.colRatios;
+  }
+  if (spec.align !== t.align) {
+    diffs.push({ field: 'align', expected: ALIGN_TABLE[spec.align] ?? spec.align, actual: ALIGN_TABLE[t.align] ?? t.align });
+    set.align = spec.align;
+  }
+  if (!bordersEqual(spec.borders, t.borders)) {
+    diffs.push({ field: 'borders', expected: describeBorders(spec.borders), actual: describeBorders(t.borders) });
+    set.borders = spec.borders;
+  }
+  if ((spec.headerShading ?? '') !== (t.headerShading ?? '')) {
+    diffs.push({ field: 'headerShading', expected: spec.headerShading ? `#${spec.headerShading}` : 'không tô', actual: t.headerShading ? `#${t.headerShading}` : 'không tô' });
+    set.headerShading = spec.headerShading;
+  }
+  if (spec.headerRepeat !== t.headerRepeat) {
+    diffs.push({ field: 'headerRepeat', expected: spec.headerRepeat ? 'có' : 'không', actual: t.headerRepeat ? 'có' : 'không' });
+    set.headerRepeat = spec.headerRepeat;
+  }
+  if (spec.vAlign !== t.vAlign) {
+    diffs.push({ field: 'vAlign', expected: V_NAMES[spec.vAlign] ?? spec.vAlign, actual: V_NAMES[t.vAlign] ?? t.vAlign });
+    set.vAlign = spec.vAlign;
+  }
+  if (spec.cellMarginMm) {
+    const a = t.cellMarginMm ?? WORD_DEFAULT_MARGIN;
+    if (spec.cellMarginMm.some((v, i) => Math.abs(v - (a[i] as number)) > 0.6)) {
+      const show = (m: number[]): string => m.map((x) => round(x, 0.1)).join('/');
+      diffs.push({ field: 'cellMarginMm', expected: `${show(spec.cellMarginMm)} mm`, actual: `${show(a)} mm` });
+      set.cellMarginMm = spec.cellMarginMm;
+    }
+  }
+  return { diffs, set };
+}
+
+function checkTables(profile: FormatProfile, doc: DocFormat): { issues: (TableIssue & { fix: Partial<TableSpec> })[]; unmatched: number[] } {
+  const issues: (TableIssue & { fix: Partial<TableSpec> })[] = [];
+  const unmatched: number[] = [];
+  const specs = profile.tables ?? [];
+  doc.tables.forEach((t, tableIndex) => {
+    const cols = t.colWidthsMm.length;
+    const spec = specs.find((s) => s.cols === cols);
+    if (!spec) {
+      unmatched.push(tableIndex);
+      return;
+    }
+    const { diffs, set } = diffTable(spec, t);
+    if (diffs.length) issues.push({ tableIndex, cols, diffs, fix: set });
+  });
+  return { issues, unmatched };
+}
+
+export interface TableFix {
+  tableIndex: number;
+  cols: number;
+  set: Partial<TableSpec>;
+}
+
+export function planTableFixes(profile: FormatProfile, doc: DocFormat): TableFix[] {
+  return checkTables(profile, doc).issues.map((i) => ({ tableIndex: i.tableIndex, cols: i.cols, set: i.fix }));
+}
+
+export function describeTableSpec(s: TableSpec): string {
+  return [
+    `Bảng ${s.cols} cột (${s.colRatios.map((r) => `${Math.round(r * 100)}%`).join(' / ')})`,
+    describeBorders(s.borders),
+    s.headerShading ? `hàng tiêu đề tô #${s.headerShading}` : 'hàng tiêu đề không tô nền',
+    s.headerRepeat ? 'lặp lại hàng tiêu đề mỗi trang' : '',
+    `căn dọc ${V_NAMES[s.vAlign] ?? s.vAlign}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }

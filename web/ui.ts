@@ -10,7 +10,7 @@ import {
   type Options,
 } from '../src/profiles/vn-nd30';
 import type { DocFormat } from '../src/docx-read';
-import type { FixItem, FormatProfile } from '../src/learn/profile';
+import type { FixItem, FormatProfile, TableFix } from '../src/learn/profile';
 import { renderDocxBase64 } from '../src/render-docx';
 import { mountTemplates } from './templates-ui';
 import { loadOptions, saveOptions } from './storage';
@@ -32,6 +32,8 @@ export interface Host {
   selectParagraph?: (index: number) => Promise<void>;
   /** Sửa định dạng trực tiếp trong tài liệu đang mở. */
   applyFixes?: (items: FixItem[], profile: FormatProfile) => Promise<{ applied: number; skipped: number; capsNotApplied: number }>;
+  /** Sửa khung bảng (viền, độ rộng cột, tô nền hàng tiêu đề ...) trong tài liệu đang mở. */
+  applyTableFixes?: (items: TableFix[]) => Promise<{ applied: number; notes: string[] }>;
 }
 
 const SAMPLE = `UBND HUYỆN MẪU

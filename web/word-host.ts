@@ -1,6 +1,6 @@
 /// <reference types="office-js" />
 import { readFlatOpc } from '../src/docx-read';
-import type { FixItem, FormatProfile } from '../src/learn/profile';
+import type { FixItem, FormatProfile, TableFix } from '../src/learn/profile';
 import type { Host } from './ui';
 
 /** Bỏ ký tự điều khiển của Word (hết ô bảng \u0007, ngắt dòng mềm \u000b …). */
@@ -84,6 +84,92 @@ export const wordHost: Host = {
       await ctx.sync();
       return { applied, skipped, capsNotApplied };
     });
+  },
+
+  async applyTableFixes(items: TableFix[]) {
+    const notes: string[] = [];
+    let applied = 0;
+    const PT = 72 / 25.4;
+    const ALIGN = { left: 'Left', center: 'Centered', right: 'Right' } as const;
+    const V = { top: 'Top', center: 'Center', bottom: 'Bottom' } as const;
+    const SIDE = { top: 'Top', bottom: 'Bottom', left: 'Left', right: 'Right', insideH: 'InsideHorizontal', insideV: 'InsideVertical' } as const;
+    // Độ dày viền Word cho phép (điểm).
+    const WIDTHS = [0.25, 0.5, 0.75, 1, 1.5, 2.25, 3, 4.5, 6];
+    const snap = (pt: number): number => WIDTHS.reduce((a, b) => (Math.abs(b - pt) < Math.abs(a - pt) ? b : a));
+    const TYPE = { single: 'Single', double: 'Double', dashed: 'Dashed', dotted: 'Dotted' } as const;
+
+    await Word.run(async (ctx) => {
+      const tables = ctx.document.body.tables;
+      tables.load('items/width');
+      await ctx.sync();
+      for (const it of items) {
+        const t = tables.items[it.tableIndex];
+        if (!t) {
+          notes.push(`Bảng ${it.tableIndex + 1}: không tìm thấy trong tài liệu.`);
+          continue;
+        }
+        // Mỗi nhóm thuộc tính được sửa riêng: một nhóm lỗi (ví dụ bảng có ô gộp) không chặn các nhóm khác.
+        const steps: [string, () => void][] = [];
+        const s = it.set;
+        if (s.align) steps.push(['căn bảng', () => (t.alignment = ALIGN[s.align as keyof typeof ALIGN])]);
+        if (s.vAlign) steps.push(['căn dọc', () => (t.verticalAlignment = V[s.vAlign as keyof typeof V])]);
+        if (s.headerRepeat !== undefined) steps.push(['lặp hàng tiêu đề', () => (t.headerRowCount = s.headerRepeat ? 1 : 0)]);
+        if (s.headerShading !== undefined)
+          steps.push(['màu nền hàng tiêu đề', () => (t.rows.getFirst().shadingColor = s.headerShading ? `#${s.headerShading}` : '#FFFFFF')]);
+        if (s.cellMarginMm) {
+          const m = s.cellMarginMm;
+          steps.push([
+            'lề trong ô',
+            () => {
+              t.setCellPadding('Top', m[0] * PT);
+              t.setCellPadding('Right', m[1] * PT);
+              t.setCellPadding('Bottom', m[2] * PT);
+              t.setCellPadding('Left', m[3] * PT);
+            },
+          ]);
+        }
+        if (s.borders) {
+          const b = s.borders;
+          steps.push([
+            'viền bảng',
+            () => {
+              for (const k of Object.keys(SIDE) as (keyof typeof SIDE)[]) {
+                const border = t.getBorder(SIDE[k]);
+                const spec = b[k];
+                if (spec) {
+                  border.type = TYPE[spec.style];
+                  border.width = snap(spec.sizePt);
+                  border.color = `#${spec.color}`;
+                } else border.type = 'None';
+              }
+            },
+          ]);
+        }
+        if (s.colRatios) {
+          const r = s.colRatios;
+          steps.push([
+            'độ rộng cột',
+            () => {
+              r.forEach((ratio, c) => {
+                t.getCell(0, c).columnWidth = ratio * t.width;
+              });
+            },
+          ]);
+        }
+        let ok = 0;
+        for (const [name, run] of steps) {
+          try {
+            run();
+            await ctx.sync();
+            ok++;
+          } catch {
+            notes.push(`Bảng ${it.tableIndex + 1}: không đặt được ${name} (có thể bảng có ô gộp hoặc Word chưa hỗ trợ).`);
+          }
+        }
+        if (ok > 0) applied++;
+      }
+    });
+    return { applied, notes };
   },
 
   async openNew(base64) {

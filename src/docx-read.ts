@@ -45,11 +45,35 @@ export interface PageFmt {
   titlePg: boolean;
 }
 
+export interface BorderFmt {
+  sizePt: number;
+  /** hex không có # (chữ hoa) */
+  color: string;
+  style: 'single' | 'double' | 'dashed' | 'dotted';
+}
+export type BorderSide = 'top' | 'bottom' | 'left' | 'right' | 'insideH' | 'insideV';
+export type TableBorders = Record<BorderSide, BorderFmt | null>;
+
+/** Khung của một bảng (chỉ bảng ở mức cao nhất, không tính bảng lồng nhau). */
+export interface TableFmt {
+  id: number;
+  rows: number;
+  colWidthsMm: number[];
+  align: 'left' | 'center' | 'right';
+  borders: TableBorders;
+  /** Màu nền hàng đầu (hex), null nếu không tô. */
+  headerShading: string | null;
+  headerRepeat: boolean;
+  vAlign: 'top' | 'center' | 'bottom';
+  /** [trên, phải, dưới, trái] mm; null = mặc định của Word. */
+  cellMarginMm: [number, number, number, number] | null;
+}
+
 export interface DocFormat {
   paragraphs: ParaFmt[];
   /** undefined nếu nguồn không có thông tin trang (ví dụ OOXML của một vùng chọn). */
   page?: PageFmt;
-  tables: { id: number; colWidthsMm: number[] }[];
+  tables: TableFmt[];
   defaultFont?: string;
   defaultSizePt?: number;
   /** undefined nếu nguồn không có phần đầu trang để xét. */
@@ -170,6 +194,61 @@ function readRPr(rPr: Element | null): RProps {
   return r;
 }
 
+const BORDER_SIDES: [BorderSide, string[]][] = [
+  ['top', ['top']],
+  ['bottom', ['bottom']],
+  ['left', ['left', 'start']],
+  ['right', ['right', 'end']],
+  ['insideH', ['insideH']],
+  ['insideV', ['insideV']],
+];
+
+function readBorder(el: Element | null): BorderFmt | null | undefined {
+  if (!el) return undefined;
+  const val = attr(el, 'val');
+  if (!val || val === 'nil' || val === 'none') return null;
+  const color = attr(el, 'color');
+  const style = val === 'double' ? 'double' : val === 'dashed' || val === 'dashSmallGap' ? 'dashed' : val === 'dotted' ? 'dotted' : 'single';
+  return {
+    sizePt: (num(attr(el, 'sz')) ?? 4) / 8,
+    color: !color || color === 'auto' ? '000000' : color.toUpperCase(),
+    style,
+  };
+}
+
+function readBorders(tblBorders: Element | null): Partial<TableBorders> {
+  const out: Partial<TableBorders> = {};
+  if (!tblBorders) return out;
+  for (const [side, names] of BORDER_SIDES) {
+    for (const n of names) {
+      const b = readBorder(kid(tblBorders, n));
+      if (b !== undefined) {
+        out[side] = b;
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+function readCellMar(el: Element | null): [number, number, number, number] | null {
+  if (!el) return null;
+  const side = (names: string[]): number => {
+    for (const n of names) {
+      const w = num(attr(kid(el, n), 'w'));
+      if (w !== undefined) return w / TWIP_PER_MM;
+    }
+    return 0;
+  };
+  return [side(['top']), side(['right', 'end']), side(['bottom']), side(['left', 'start'])];
+}
+
+interface TableStyleDef {
+  basedOn?: string;
+  borders: Partial<TableBorders>;
+  cellMar: [number, number, number, number] | null;
+}
+
 const assignDefined = <T extends object>(target: T, src: Partial<T>): T => {
   for (const [k, v] of Object.entries(src)) if (v !== undefined) (target as Record<string, unknown>)[k] = v;
   return target;
@@ -182,16 +261,35 @@ interface StyleDef {
   isDefault: boolean;
 }
 
-function readStyles(stylesXml: string | undefined): { styles: Map<string, StyleDef>; defP: PProps; defR: RProps } {
+function readStyles(stylesXml: string | undefined): {
+  styles: Map<string, StyleDef>;
+  tableStyles: Map<string, TableStyleDef>;
+  defP: PProps;
+  defR: RProps;
+} {
   const styles = new Map<string, StyleDef>();
+  const tableStyles = new Map<string, TableStyleDef>();
   const defP: PProps = {};
   const defR: RProps = {};
-  if (!stylesXml) return { styles, defP, defR };
+  if (!stylesXml) return { styles, tableStyles, defP, defR };
   const root = parseXml(stylesXml).documentElement;
   const dd = kid(root, 'docDefaults');
   assignDefined(defR, readRPr(kid(kid(dd, 'rPrDefault'), 'rPr')));
   assignDefined(defP, readPPr(kid(kid(dd, 'pPrDefault'), 'pPr')));
   for (const s of kids(root, 'style')) {
+    if (attr(s, 'type') === 'table') {
+      const id = attr(s, 'styleId');
+      if (id) {
+        const tblPr = kid(s, 'tblPr');
+        const basedOn = attr(kid(s, 'basedOn'), 'val') ?? undefined;
+        tableStyles.set(id, {
+          ...(basedOn ? { basedOn } : {}),
+          borders: readBorders(kid(tblPr, 'tblBorders')),
+          cellMar: readCellMar(kid(tblPr, 'tblCellMar')),
+        });
+      }
+      continue;
+    }
     if (attr(s, 'type') !== 'paragraph') continue;
     const id = attr(s, 'styleId');
     if (!id) continue;
@@ -203,7 +301,7 @@ function readStyles(stylesXml: string | undefined): { styles: Map<string, StyleD
       isDefault: attr(s, 'default') === '1',
     });
   }
-  return { styles, defP, defR };
+  return { styles, tableStyles, defP, defR };
 }
 
 function styleChain(styles: Map<string, StyleDef>, id: string | undefined): StyleDef[] {
@@ -230,7 +328,7 @@ export function parseDocumentXml(
   const doc = parseXml(documentXml).documentElement;
   const body = kid(doc, 'body');
   if (!body) throw new Error('Không tìm thấy nội dung văn bản (w:body).');
-  const { styles, defP, defR } = readStyles(extra.stylesXml);
+  const { styles, tableStyles, defP, defR } = readStyles(extra.stylesXml);
   const defaultStyleId = [...styles.entries()].find(([, s]) => s.isDefault)?.[0];
 
   const paragraphs: ParaFmt[] = [];
@@ -299,14 +397,57 @@ export function parseDocumentXml(
     else if (el.localName === 'tbl') {
       const id = tables.length;
       const grid = kid(el, 'tblGrid');
+      const tblPr = kid(el, 'tblPr');
+      // Viền và lề ô: Style bảng (có kế thừa) rồi đến thuộc tính trực tiếp của bảng.
+      const borders: TableBorders = { top: null, bottom: null, left: null, right: null, insideH: null, insideV: null };
+      let cellMar: [number, number, number, number] | null = null;
+      const styleChain: TableStyleDef[] = [];
+      const seenStyles = new Set<string>();
+      for (let sid = attr(kid(tblPr, 'tblStyle'), 'val') ?? undefined; sid && tableStyles.has(sid) && !seenStyles.has(sid); ) {
+        seenStyles.add(sid);
+        const st = tableStyles.get(sid) as TableStyleDef;
+        styleChain.unshift(st);
+        sid = st.basedOn;
+      }
+      for (const st of styleChain) {
+        Object.assign(borders, st.borders);
+        if (st.cellMar) cellMar = st.cellMar;
+      }
+      Object.assign(borders, readBorders(kid(tblPr, 'tblBorders')));
+      cellMar = readCellMar(kid(tblPr, 'tblCellMar')) ?? cellMar;
+      const jc = attr(kid(tblPr, 'jc'), 'val');
+
+      const rows = kids(el, 'tr');
+      const firstRow = rows[0];
+      const headerRepeat = !!kid(kid(firstRow, 'trPr'), 'tblHeader');
+      const shadeVals: string[] = [];
+      const vAligns: string[] = [];
+      rows.forEach((tr, rowIdx) => {
+        kids(tr, 'tc').forEach((tc, col) => {
+          const tcPr = kid(tc, 'tcPr');
+          const v = attr(kid(tcPr, 'vAlign'), 'val');
+          if (v) vAligns.push(v);
+          const fill = attr(kid(tcPr, 'shd'), 'fill');
+          if (rowIdx === 0 && fill && fill !== 'auto') shadeVals.push(fill.toUpperCase());
+          for (const p of kids(tc, 'p')) readParagraph(p, { id, row: rowIdx, col });
+        });
+      });
+      const vMode = ((): 'top' | 'center' | 'bottom' => {
+        const m = new Map<string, number>();
+        for (const v of vAligns) m.set(v, (m.get(v) ?? 0) + 1);
+        const top = [...m.entries()].sort((x, y) => y[1] - x[1])[0]?.[0];
+        return top === 'center' ? 'center' : top === 'bottom' ? 'bottom' : 'top';
+      })();
       tables.push({
         id,
+        rows: rows.length,
         colWidthsMm: kids(grid as Element, 'gridCol').map((g) => mm(num(attr(g, 'w'))) ?? 0),
-      });
-      kids(el, 'tr').forEach((tr, row) => {
-        kids(tr, 'tc').forEach((tc, col) => {
-          for (const p of kids(tc, 'p')) readParagraph(p, { id, row, col });
-        });
+        align: jc === 'center' ? 'center' : jc === 'right' || jc === 'end' ? 'right' : 'left',
+        borders,
+        headerShading: shadeVals[0] ?? null,
+        headerRepeat,
+        vAlign: vMode,
+        cellMarginMm: cellMar,
       });
     }
   }

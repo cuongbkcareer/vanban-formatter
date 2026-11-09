@@ -43,10 +43,13 @@ Trong khung add-in (hoặc bản web), mục "Mẫu định dạng" cho phép:
    (đánh số `I.` `1.` `a)`, gạch đầu dòng, chữ in hoa, kết thúc bằng dấu `:`, dài hay ngắn) và lề trang.
 2. **Kiểm tra** tài liệu khác theo mẫu: liệt kê đoạn nào lệch định dạng và lệch ở đâu; bấm vào dòng để chọn đoạn trong Word.
 3. **Sửa tự động** trực tiếp trong tài liệu đang mở (hoàn tác được bằng Cmd+Z / Ctrl+Z).
-4. Lưu nhiều mẫu, xuất/nhập file `.json` để chia sẻ cho đồng nghiệp.
+4. **Khung bảng** (giáo án thường có nhiều bảng): học và sửa viền (từng cạnh, độ dày, màu), độ rộng các cột (theo tỉ lệ), tô nền hàng tiêu đề,
+   lặp lại hàng tiêu đề mỗi trang, căn bảng, căn dọc trong ô, lề trong ô. Mẫu bảng được áp cho các bảng **cùng số cột**.
+5. Lưu nhiều mẫu, xuất/nhập file `.json` để chia sẻ cho đồng nghiệp.
 
-Giới hạn hiện tại: sửa được định dạng đoạn (căn lề, cỡ chữ, đậm/nghiêng, font, thụt lề, giãn dòng); chưa chỉnh được khung bảng
-(viền, độ rộng cột, tô nền), lề trang chỉ báo cáo chứ chưa tự sửa; chữ in hoa không tự đổi.
+Giới hạn hiện tại: khung bảng chỉ áp cho bảng cùng số cột với một bảng trong file mẫu (bảng có ô gộp có thể không đặt được độ rộng cột);
+viền/tô nền riêng của từng ô chưa học (chỉ viền chung của bảng và nền hàng đầu); lề trang chỉ báo cáo chứ chưa tự sửa;
+chữ in hoa không tự đổi.
 Mã nguồn: `src/docx-read.ts` (đọc .docx/OOXML), `src/learn/profile.ts` (học, đoán vai trò, so sánh), `web/templates-ui.ts` (giao diện).
 
 ## Kiến trúc

@@ -44,11 +44,39 @@ export interface TableCellNode {
   widthMm: number;
 }
 
+export interface BorderSpec {
+  sizePt: number;
+  /** Mã màu hex không có dấu #, ví dụ "000000". */
+  color: string;
+  style?: 'single' | 'double' | 'dashed' | 'dotted';
+}
+
+export interface TableFormatSpec {
+  /** Mặt nào vắng mặt hoặc null = không viền. */
+  borders?: {
+    top?: BorderSpec | null;
+    bottom?: BorderSpec | null;
+    left?: BorderSpec | null;
+    right?: BorderSpec | null;
+    insideH?: BorderSpec | null;
+    insideV?: BorderSpec | null;
+  };
+  /** Màu nền hàng đầu (hex không #). */
+  headerShading?: string | null;
+  /** Lặp lại hàng đầu ở đầu mỗi trang. */
+  headerRepeat?: boolean;
+  vAlign?: 'top' | 'center' | 'bottom';
+  /** Lề trong ô (mm) bốn phía: [trên, phải, dưới, trái]. */
+  cellMarginMm?: [number, number, number, number];
+  align?: 'left' | 'center' | 'right';
+}
+
 export interface TableNode {
   type: 'table';
-  /** Bảng không viền, dùng để dàn trang (phần đầu, phần nơi nhận / chữ ký). */
+  /** Mặc định bảng không viền, dùng để dàn trang (phần đầu, phần nơi nhận / chữ ký). */
   rows: TableCellNode[][];
   cantSplit?: boolean;
+  format?: TableFormatSpec;
 }
 
 export type BlockNode = ParagraphNode | RuleNode | TableNode;
