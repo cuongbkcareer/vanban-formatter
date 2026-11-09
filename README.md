@@ -20,7 +20,13 @@ Nếu trình duyệt không mở được file trực tiếp, chạy `python3 -m
 ## Add-in cho Word (Windows và Mac)
 
 Khung bên cạnh trong Word: lấy văn bản từ tài liệu đang mở, nhận diện, cho sửa nhãn, rồi **mở thành tài liệu mới** đúng thể thức (hoặc thay nội dung tài liệu hiện tại, chế độ thử nghiệm).
-Cài đặt: xem [HUONG-DAN-CAI-DAT.md](HUONG-DAN-CAI-DAT.md). File zip nằm ở mục Releases; giao diện được host tại GitHub Pages (thư mục `docs/`).
+Cài trên Mac bằng một dòng lệnh trong Terminal:
+
+```bash
+curl -fsSL https://cuongbkcareer.github.io/vanban-formatter/cai-dat-mac.sh | bash
+```
+
+Chi tiết (Mac, Windows, cả cơ quan): [HUONG-DAN-CAI-DAT.md](HUONG-DAN-CAI-DAT.md). File zip nằm ở mục Releases; giao diện được host tại GitHub Pages (thư mục `docs/`).
 
 ```bash
 npm run build      # tạo docs/ (taskpane, manifest, bản web độc lập)

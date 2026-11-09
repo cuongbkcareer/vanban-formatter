@@ -53,6 +53,10 @@ for (const s of [16, 32, 80]) await copyFile(`assets/icon-${s}.png`, `${OUT}/ass
 await writeFile(`${OUT}/manifest.xml`, generateManifest({ baseUrl, version: await readVersion() }));
 await writeFile(`${OUT}/.nojekyll`, '');
 
+// Trình cài đặt Mac: dán một dòng lệnh vào Terminal (tải bằng curl nên không bị cảnh báo Gatekeeper).
+const macInstaller = (await readFile('installer/cai-dat-mac.sh', 'utf8')).replace('__BASE_URL__', () => baseUrl);
+await writeFile(`${OUT}/cai-dat-mac.sh`, macInstaller);
+
 // Trang chủ GitHub Pages: liên kết tải và hướng dẫn.
 const version = await readVersion();
 await writeFile(
@@ -61,10 +65,15 @@ await writeFile(
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>Chuẩn hoá văn bản hành chính (NĐ 30/2020)</title>
-<style>body{font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;max-width:720px;margin:40px auto;padding:0 16px}a.btn{display:inline-block;background:#1a56c4;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;margin:4px 8px 4px 0}code{background:#8882;padding:1px 5px;border-radius:4px}</style></head>
+<style>body{font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;max-width:720px;margin:40px auto;padding:0 16px}a.btn{display:inline-block;background:#1a56c4;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;margin:4px 8px 4px 0}code{background:#8882;padding:1px 5px;border-radius:4px}pre{background:#8882;padding:12px;border-radius:8px;overflow-x:auto;user-select:all}h2{font-size:18px;margin-top:28px}</style></head>
 <body>
 <h1>Chuẩn hoá văn bản hành chính</h1>
 <p>Chuyển văn bản thô thành văn bản hành chính đúng thể thức theo NĐ 30/2020/NĐ-CP. Add-in cho Word trên Windows và Mac. Không dùng AI, không gửi nội dung văn bản đi.</p>
+<h2>Cài vào Word trên Mac</h2>
+<p>Mở <strong>Terminal</strong> (Cmd+Space, gõ Terminal), dán một dòng sau rồi nhấn Enter. Nếu macOS hỏi "Terminal muốn điều khiển Finder", bấm Cho phép. Xong thoát hẳn Word (Cmd+Q) rồi mở lại.</p>
+<pre>curl -fsSL ${baseUrl}/cai-dat-mac.sh | bash</pre>
+<p style="font-size:14px">Script ngắn, đọc trước được tại <a href="cai-dat-mac.sh">cai-dat-mac.sh</a>. Nó chỉ chép một file (manifest.xml) vào thư mục add-in của Word.</p>
+<h2>Tải về</h2>
 <p><a class="btn" href="https://github.com/${REPO}/releases/latest">Tải add-in (zip, v${version})</a>
 <a class="btn" href="manifest.xml">manifest.xml</a>
 <a class="btn" href="vanban.html">Dùng bản web (không cần cài)</a></p>

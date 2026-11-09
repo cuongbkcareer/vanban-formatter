@@ -10,19 +10,40 @@ Add-in thêm nút **Chuẩn hoá NĐ 30** vào thẻ Trang đầu (Home) của W
 - Giao diện add-in được tải từ GitHub Pages (`https://cuongbkcareer.github.io/vanban-formatter/`), và Word tải thư viện `office.js` từ máy chủ của Microsoft. Hai nguồn này nhận được yêu cầu tải file, **không** nhận được nội dung văn bản của bạn.
 - Cơ quan muốn kiểm soát chặt hơn có thể tự host: xem mục cuối.
 
-## macOS
+## macOS (cách dễ nhất: một dòng lệnh)
 
-**Cách 1: dùng script.** Giải nén zip, chuột phải `CAI-DAT-MAC.command` > Mở (Open) > Mở. (macOS hỏi vì file tải từ Internet.) Làm theo hướng dẫn hiện ra.
+1. Mở **Terminal** (Cmd+Space, gõ `Terminal`).
+2. Dán dòng sau rồi nhấn Enter:
 
-**Cách 2: thủ công.** Chép `manifest.xml` vào thư mục sau (Finder > Đi > Đi tới thư mục, dán đường dẫn). Mở Word một lần trước nếu thư mục chưa có.
-
+```bash
+curl -fsSL https://cuongbkcareer.github.io/vanban-formatter/cai-dat-mac.sh | bash
 ```
-~/Library/Containers/com.microsoft.Word/Data/Documents/wef
+
+3. Nếu macOS hỏi **"Terminal muốn điều khiển Finder"**, bấm **Cho phép** (chỉ một lần). Lý do: macOS không cho Terminal ghi vào dữ liệu của Word, nhưng Finder thì được, nên script nhờ Finder chép giúp.
+4. Thoát hẳn Word (Cmd+Q), mở lại, rồi vào thẻ Trang đầu tìm nút **Chuẩn hoá NĐ 30**.
+
+Nếu báo "Chưa có thư mục dữ liệu của Word": mở Word một lần, thoát (Cmd+Q), chạy lại lệnh.
+
+Script chỉ chép một file (`manifest.xml`) vào `~/Library/Containers/com.microsoft.Word/Data/Documents/wef`. Muốn đọc trước khi chạy: mở https://cuongbkcareer.github.io/vanban-formatter/cai-dat-mac.sh trong trình duyệt. Dùng `curl` nên file không bị gắn cờ tải từ Internet, và bạn không gặp cảnh báo "Apple không thể xác minh…".
+
+**Gỡ cài đặt:**
+
+```bash
+curl -fsSL https://cuongbkcareer.github.io/vanban-formatter/cai-dat-mac.sh | bash -s -- --uninstall
 ```
 
-Thoát hẳn Word (Cmd+Q), mở lại. Nút nằm ở thẻ Trang đầu. Nếu không thấy: Chèn > Phần bổ trợ > Phần bổ trợ của tôi > Developer Add-ins.
+### Nếu đã tải file zip
 
-Nếu macOS chặn Terminal truy cập thư mục của Word: Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Toàn quyền truy cập ổ đĩa > bật Terminal.
+Giải nén zip, mở Terminal, gõ `bash ` (có dấu cách), kéo file `CAI-DAT-MAC.command` vào cửa sổ Terminal rồi Enter. Làm theo cách này không bị cảnh báo của macOS. (Bấm đúp vào file sẽ bị Gatekeeper chặn vì file chưa có chữ ký của Apple. Muốn bấm đúp thì vào Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Vẫn mở.)
+
+### Cài thủ công bằng Finder (không dùng Terminal)
+
+1. Mở Word một lần rồi thoát (Cmd+Q).
+2. Finder > Đi > Đi tới thư mục, dán `~/Library/Containers/com.microsoft.Word/Data/Documents`.
+3. Tạo thư mục mới tên `wef` (chữ thường) nếu chưa có, kéo `manifest.xml` vào đó.
+4. Mở lại Word.
+
+Nếu không thấy nút trên thẻ Trang đầu: Chèn > Phần bổ trợ > Phần bổ trợ của tôi > Developer Add-ins.
 
 ## Windows
 
@@ -44,10 +65,9 @@ Nếu cơ quan có tenant Microsoft 365: Trung tâm quản trị Microsoft 365 >
 
 Word vẫn cần tải `office.js` từ `appsforoffice.microsoft.com`; Microsoft không cho phép đóng gói thư viện này riêng.
 
-## Gỡ cài đặt
+## Gỡ cài đặt trên Windows
 
-- **Mac:** xoá file `vanban-formatter.manifest.xml` trong thư mục `wef` ở trên.
-- **Windows:** xoá khoá registry `HKCU\Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{3b7e2a64-9f1c-4d58-a0b2-5c6d7e8f9a10}`, chạy `Remove-SmbShare -Name VanBanFormatterAddin` (PowerShell quản trị) và xoá thư mục `%USERPROFILE%\VanBanFormatterAddin`.
+Xoá khoá registry `HKCU\Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{3b7e2a64-9f1c-4d58-a0b2-5c6d7e8f9a10}`, chạy `Remove-SmbShare -Name VanBanFormatterAddin` (PowerShell quản trị) và xoá thư mục `%USERPROFILE%\VanBanFormatterAddin`.
 
 ## Cập nhật
 
