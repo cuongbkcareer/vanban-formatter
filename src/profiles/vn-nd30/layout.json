@@ -1,0 +1,69 @@
+{
+  "_comment": "Quy cách trình bày văn bản hành chính theo Phụ lục I, NĐ 30/2020/NĐ-CP. Các số liệu được nhập từ trí nhớ, CHƯA đối chiếu với văn bản gốc: người dùng cần kiểm tra lại từng mục có 'range' và 'source' trước khi dùng chính thức.",
+  "legalBasis": "Nghị định 30/2020/NĐ-CP, Phụ lục I (cần xác nhận còn hiệu lực)",
+  "verified": false,
+  "font": "Times New Roman",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "margins": {
+      "topMm": 20,
+      "bottomMm": 20,
+      "leftMm": 30,
+      "rightMm": 20,
+      "range": { "topMm": [20, 25], "bottomMm": [20, 25], "leftMm": [30, 35], "rightMm": [15, 20] }
+    },
+    "headerDistanceMm": 10,
+    "footerDistanceMm": 10,
+    "pageNumber": { "sizePt": 14, "hideOnFirstPage": true }
+  },
+  "defaults": {
+    "bodySizePt": 14,
+    "bodySizeRangePt": [13, 14],
+    "lineSpacing": 1.15,
+    "lineSpacingRange": [1, 1.5],
+    "paragraphSpaceBeforePt": 6,
+    "firstLineIndentMm": 12.7,
+    "date": { "padDayBelow": 10, "padMonths": [1, 2] }
+  },
+  "header": {
+    "leftColumnMm": 68,
+    "rightColumnMm": 92,
+    "parentOrg": { "sizePt": 13, "sizeRangePt": [12, 13], "bold": false, "caps": true, "align": "center" },
+    "issuer": { "sizePt": 13, "sizeRangePt": [12, 13], "bold": true, "caps": true, "align": "center", "ruleRatio": 0.4, "ruleRatioRange": [0.33, 0.5] },
+    "nationalTitle": { "sizePt": 13, "sizeRangePt": [12, 13], "bold": true, "caps": true, "align": "center" },
+    "motto": { "sizePt": 14, "sizeRangePt": [13, 14], "bold": true, "caps": false, "align": "center", "ruleMatchesText": true },
+    "number": { "sizePt": 13, "bold": false, "align": "center", "spaceBeforePt": 6 },
+    "subjectCongVan": { "sizePt": 12, "sizeRangePt": [12, 13], "bold": false, "align": "center", "spaceBeforePt": 2 },
+    "placeDate": { "sizePt": 14, "sizeRangePt": [13, 14], "italic": true, "align": "center", "spaceBeforePt": 6 }
+  },
+  "title": {
+    "docTypeName": { "sizePt": 14, "sizeRangePt": [13, 14], "bold": true, "caps": true, "align": "center", "spaceBeforePt": 12 },
+    "subject": { "sizePt": 14, "bold": true, "align": "center", "ruleRatio": 0.4, "ruleRatioRange": [0.33, 0.5] }
+  },
+  "addressee": { "sizePt": 14, "align": "center", "spaceBeforePt": 12 },
+  "body": {
+    "paragraph": { "align": "justify" },
+    "basis": { "italicFor": ["Quyết định", "Nghị quyết"] },
+    "authority": { "bold": true, "caps": true, "align": "center", "spaceBeforePt": 6 },
+    "enact": { "bold": true, "align": "center", "spaceBeforePt": 6 },
+    "chapter": { "bold": true, "caps": true, "align": "center", "spaceBeforePt": 6 },
+    "article": { "boldWhenShortTitle": true, "shortTitleMaxWords": 12 },
+    "headings": {
+      "1": { "bold": true },
+      "2": { "bold": true },
+      "3": { "italic": true },
+      "4": {}
+    },
+    "headingMaxWords": 20
+  },
+  "closing": {
+    "leftColumnMm": 80,
+    "rightColumnMm": 80,
+    "recipientsTitle": { "sizePt": 12, "bold": true, "italic": true },
+    "recipientItem": { "sizePt": 11 },
+    "signer": { "sizePt": 14, "bold": true, "align": "center" },
+    "signatureSpacePt": 64,
+    "spaceBeforePt": 12
+  }
+}

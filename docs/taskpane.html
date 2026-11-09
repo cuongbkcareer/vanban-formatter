@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://appsforoffice.microsoft.com; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.microsoft.com https://*.office.com https://*.office365.com https://*.officeapps.live.com; form-action 'none'; base-uri 'none'">
+<title>Chuẩn hoá văn bản hành chính (NĐ 30/2020)</title>
+<style>
+  :root { color-scheme: light dark; --b: #c9ccd1; --accent: #1a56c4; --warn: #fff4cc; }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0 auto; max-width: 1100px; padding: 14px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #666; margin: 0 0 12px; font-size: 13px; }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border: 1px solid var(--b); border-radius: 10px; margin: 2px 4px 0 0; font-weight: normal; }
+  section { border: 1px solid var(--b); border-radius: 8px; padding: 12px; margin: 0 0 12px; }
+  h2 { font-size: 15px; margin: 0 0 8px; }
+  textarea { width: 100%; min-height: 180px; font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; padding: 8px; border: 1px solid var(--b); border-radius: 6px; background: transparent; color: inherit; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-top: 10px; }
+  label { display: block; font-size: 12px; color: #666; }
+  input, select { width: 100%; padding: 5px 7px; font: inherit; border: 1px solid var(--b); border-radius: 6px; background: transparent; color: inherit; }
+  button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--b); cursor: pointer; background: transparent; color: inherit; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .line { display: grid; grid-template-columns: 1fr 44px 28px; gap: 4px; padding: 4px; border-bottom: 1px solid var(--b); align-items: center; }
+  .line .sel { grid-column: 1 / -1; }
+  .line.low { background: var(--warn); color: #222; }
+  .line.low input, .line.low select { color: #222; }
+  .conf { text-align: right; color: #666; font-variant-numeric: tabular-nums; font-size: 12px; }
+  .del { padding: 2px 0; }
+  @media (min-width: 800px) {
+    .line { grid-template-columns: 240px 1fr 44px 28px; }
+    .line .sel { grid-column: auto; }
+  }
+  .warnings { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+  .muted { color: #666; font-size: 12px; }
+  #status { min-height: 1.4em; margin: 8px 0 0; font-size: 13px; }
+  #status[data-kind="error"] { color: #b3261e; }
+  .hidden { display: none; }
+  body:not([data-host="word"]) .word-only { display: none; }
+  body[data-host="word"] .web-only { display: none; }
+  body[data-host="unsupported"] main { display: none; }
+  #unsupported { display: none; padding: 16px; }
+  body[data-host="unsupported"] #unsupported { display: block; }
+</style>
+</head>
+<body>
+<div id="unsupported">Phiên bản Word này chưa hỗ trợ WordApi 1.3. Hãy cập nhật Microsoft 365, hoặc dùng bản web độc lập.</div>
+<main>
+<h1>Chuẩn hoá văn bản hành chính</h1>
+<p class="sub"><span class="badge">NĐ 30/2020/NĐ-CP</span><span class="badge">Không dùng AI, không gửi dữ liệu đi</span></p>
+
+<section>
+  <h2>1. Văn bản thô</h2>
+  <div class="row word-only"><button class="primary" id="read-doc">Lấy văn bản từ tài liệu đang mở</button></div>
+  <textarea id="raw" placeholder="Dán nội dung văn bản vào đây…"></textarea>
+  <div class="grid">
+    <label>Loại văn bản
+      <select id="o-type"><option value="">(tự nhận diện)</option></select>
+    </label>
+    <label>Cơ quan chủ quản (nếu có)<input id="o-parent" placeholder="ỦY BAN NHÂN DÂN TỈNH …"></label>
+    <label>Cơ quan ban hành<input id="o-issuer" placeholder="SỞ … (để trống: tự nhận diện)"></label>
+    <label>Địa danh<input id="o-place" placeholder="Hà Nội"></label>
+    <label>Ngày ban hành<input id="o-date" type="date"></label>
+    <label>Số, ký hiệu<input id="o-number" placeholder="12/QĐ-UBND"></label>
+    <label>Chức vụ người ký (dấu | để xuống dòng)<input id="o-stitle" placeholder="TM. ỦY BAN NHÂN DÂN | CHỦ TỊCH"></label>
+    <label>Họ tên người ký<input id="o-sname" placeholder="Nguyễn Văn A"></label>
+  </div>
+  <p class="muted">Ô để trống: lấy từ văn bản thô. Ô đã điền: ghi đè.</p>
+  <div class="row">
+    <button class="primary" id="analyze">Phân tích</button>
+    <button id="sample">Nạp văn bản mẫu</button>
+  </div>
+</section>
+
+<section id="review" class="hidden">
+  <h2>2. Kiểm tra nhận diện <span class="muted">(nền vàng: độ tin cậy thấp)</span></h2>
+  <div id="lines"></div>
+  <ul class="warnings" id="warnings"></ul>
+  <div class="row">
+    <button class="primary web-only" id="download">Tải .docx</button>
+    <button class="primary word-only" id="open-new">Mở thành tài liệu mới (khuyên dùng)</button>
+    <button class="word-only" id="replace" title="Thử nghiệm: có thể không áp dụng lề trang và số trang">Thay nội dung tài liệu đang mở</button>
+  </div>
+</section>
+<p id="status" role="status"></p>
+</main>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script src="taskpane.js"></script>
+</body>
+</html>
