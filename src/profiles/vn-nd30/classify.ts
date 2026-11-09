@@ -42,8 +42,10 @@ const RE_POWER = /^(?:TM|KT|TL|TUQ|Q)\.\s*\S/u;
 const RE_ROLE =
   /^(?:(?:TM|KT|TL|TUQ|Q)\.\s*)?(?:Phó\s+)?(?:Chủ\s+tịch|Giám\s+đốc|Tổng\s+giám\s+đốc|Trưởng\s+\p{L}+|Bí\s+thư|Chủ\s+nhiệm|Hiệu\s+trưởng|Chánh\s+\p{L}+|Thủ\s+trưởng|Bộ\s+trưởng|Thứ\s+trưởng|Cục\s+trưởng|Viện\s+trưởng|Ủy\s+viên|Thư\s+ký|Quyền\s+\p{L}+|Đại\s+diện)/iu;
 
+const RE_ORG_GENERIC = /^(ỦY\s+BAN\s+NHÂN\s+DÂN|HỘI\s+ĐỒNG\s+NHÂN\s+DÂN|UBND|HĐND)$/iu;
+const RE_GEO_START = /^(TỈNH|THÀNH\s+PHỐ|TP\.?|HUYỆN|QUẬN|THỊ\s+XÃ|THỊ\s+TRẤN|XÃ|PHƯỜNG)\s+\S/iu;
 const RE_ORG_WORD =
-  /^(UBND|Ủy\s+ban|Sở|Bộ|Công\s+ty|Trường|Văn\s+phòng|Phòng|Ban|Hội\s+đồng|Chi\s+cục|Cục|Tổng\s+cục|Viện|Trung\s+tâm|Đảng\s+ủy|Chi\s+bộ|Đoàn|Hội|Liên\s+đoàn|Quốc\s+hội|Chính\s+phủ|Tòa\s+án|Công\s+an|Bệnh\s+viện|Tập\s+đoàn|Tổng\s+công\s+ty|Thanh\s+tra|Kho\s+bạc|Thành\s+ủy|Tỉnh\s+ủy|Huyện\s+ủy|Học\s+viện|Đại\s+học)\b/iu;
+  /^(UBND|Ủy\s+ban|Sở|Bộ|Công\s+ty|Trường|Văn\s+phòng|Phòng|Ban|Hội\s+đồng|Chi\s+cục|Cục|Tổng\s+cục|Viện|Trung\s+tâm|Đảng\s+ủy|Chi\s+bộ|Đoàn|Hội|Liên\s+đoàn|Quốc\s+hội|Chính\s+phủ|Tòa\s+án|Công\s+an|Bệnh\s+viện|Tập\s+đoàn|Tổng\s+công\s+ty|Thanh\s+tra|Kho\s+bạc|Thành\s+ủy|Tỉnh\s+ủy|Huyện\s+ủy|Học\s+viện|Đại\s+học)(?!\p{L})/iu;
 
 /* ------------------------------------------------------------------ */
 /* Địa danh, ngày tháng                                                */
@@ -364,6 +366,19 @@ export function classify(raw: string): LabeledLine[] {
       continue;
     }
     push('paragraph', line, 0.85);
+  }
+
+  // "ỦY BAN NHÂN DÂN" xuống dòng "THÀNH PHỐ MẪU" là MỘT tên cơ quan, không phải chủ quản + ban hành.
+  for (let k = orgIdx.length - 2; k >= 0; k--) {
+    const a = out[orgIdx[k] ?? -1];
+    const b = out[orgIdx[k + 1] ?? -1];
+    if (a && b && orgIdx[k + 1] === (orgIdx[k] ?? -9) + 1 && RE_ORG_GENERIC.test(a.text) && RE_GEO_START.test(b.text)) {
+      b.text = `${a.text} ${b.text}`;
+      b.confidence = a.confidence;
+      out.splice(orgIdx[k] as number, 1);
+      for (let j = k + 1; j < orgIdx.length; j++) orgIdx[j] = (orgIdx[j] as number) - 1;
+      orgIdx.splice(k, 1);
+    }
   }
 
   // Dòng tên cơ quan: dòng cuối là cơ quan ban hành, các dòng trước là cơ quan chủ quản.
