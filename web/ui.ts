@@ -130,17 +130,26 @@ export function mountUI(host: Host): void {
     });
   };
 
-  const analyze = (): void => {
-    const raw = $<HTMLTextAreaElement>('raw').value;
-    if (!raw.trim()) {
-      status('Chưa có văn bản để phân tích.', 'error');
-      return;
-    }
-    lines = classify(raw);
+  const getRaw = async (): Promise<string> =>
+    host.readSource ? host.readSource() : $<HTMLTextAreaElement>('raw').value;
+
+  const showLines = (): void => {
     $('review').classList.remove('hidden');
     renderLines();
     renderWarnings();
-    status(`Đã nhận diện ${lines.length} dòng. Hãy kiểm tra các dòng nền vàng.`);
+  };
+
+  /** Phân tích văn bản; trả về false nếu không có gì để xử lý. */
+  const analyze = async (): Promise<boolean> => {
+    const raw = await getRaw();
+    if (!raw.trim()) {
+      status(host.kind === 'word' ? 'Tài liệu đang trống.' : 'Chưa có văn bản để xử lý. Hãy dán văn bản vào ô trên.', 'error');
+      return false;
+    }
+    lines = classify(raw);
+    renderWarnings();
+    if (!$('review').classList.contains('hidden')) renderLines();
+    return true;
   };
 
   const makeDocx = async (): Promise<{ base64: string; filename: string }> => {
@@ -150,14 +159,36 @@ export function mountUI(host: Host): void {
     return { base64, filename };
   };
 
+  /** Các nút trong danh sách kiểm tra: dùng đúng danh sách nhãn người dùng đã sửa. */
   const act = (fn: (d: { base64: string; filename: string }) => Promise<void> | void, okMsg: string) => async (): Promise<void> => {
     try {
-      if (lines.length === 0) analyze();
-      if (lines.length === 0) return;
+      if (lines.length === 0 && !(await analyze())) return;
       await fn(await makeDocx());
       status(okMsg);
     } catch (e) {
       status(`Lỗi: ${e instanceof Error ? e.message : String(e)}`, 'error');
+    }
+  };
+
+  /** Nút chính: đọc, nhận diện, tạo văn bản đúng thể thức, giao cho Word (hoặc tải về) trong một lần bấm. */
+  const quick = async (): Promise<void> => {
+    const btn = $<HTMLButtonElement>('quick');
+    btn.disabled = true;
+    status('Đang xử lý…');
+    try {
+      if (!(await analyze())) return;
+      const { base64, filename } = await makeDocx();
+      if (host.openNew) await host.openNew(base64);
+      else await host.save?.(base64, filename);
+      const missing = assemble(lines, readOptions()).warnings.filter((w) => w.startsWith('Thiếu') || w.startsWith('Chưa'));
+      status(
+        (host.kind === 'word' ? 'Đã mở văn bản đúng thể thức thành tài liệu mới.' : 'Đã tạo file .docx.') +
+          (missing.length ? ` Còn ${missing.length} thông tin cần bổ sung (chỗ có dấu …), xem bên dưới.` : ''),
+      );
+    } catch (e) {
+      status(`Lỗi: ${e instanceof Error ? e.message : String(e)}`, 'error');
+    } finally {
+      btn.disabled = false;
     }
   };
 
@@ -169,22 +200,20 @@ export function mountUI(host: Host): void {
     typeSel.append(opt);
   }
 
-  $('analyze').addEventListener('click', analyze);
-  $('sample').addEventListener('click', () => {
-    $<HTMLTextAreaElement>('raw').value = SAMPLE;
-  });
-  $('read-doc').addEventListener('click', async () => {
+  $('quick').textContent = host.kind === 'word' ? 'Chuẩn hoá văn bản này' : 'Tạo file .docx';
+  $('quick').addEventListener('click', () => void quick());
+  $('analyze').addEventListener('click', async () => {
     try {
-      const text = await host.readSource?.();
-      if (!text?.trim()) {
-        status('Tài liệu đang trống.', 'error');
-        return;
+      if (await analyze()) {
+        showLines();
+        status(`Đã nhận diện ${lines.length} dòng. Hãy kiểm tra các dòng nền vàng.`);
       }
-      $<HTMLTextAreaElement>('raw').value = text;
-      analyze();
     } catch (e) {
       status(`Không đọc được tài liệu: ${e instanceof Error ? e.message : String(e)}`, 'error');
     }
+  });
+  $('sample').addEventListener('click', () => {
+    $<HTMLTextAreaElement>('raw').value = SAMPLE;
   });
   $('download').addEventListener('click', act(({ base64, filename }) => host.save?.(base64, filename), 'Đã tạo file .docx.'));
   $('open-new').addEventListener('click', act(({ base64 }) => host.openNew?.(base64), 'Đã mở văn bản đúng thể thức thành tài liệu mới.'));
