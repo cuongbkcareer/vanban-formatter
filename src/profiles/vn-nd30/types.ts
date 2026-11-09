@@ -102,6 +102,8 @@ export interface LabeledLine {
   /** 0..1 — dưới 0.7 nên được người dùng kiểm tra lại. */
   confidence: number;
   note?: string;
+  /** Chỉ số dòng đầu vào sinh ra nhãn này (dùng để nối nhãn với đoạn của file mẫu). */
+  src?: number;
 }
 
 /** Thông tin người dùng nhập để bổ sung/ghi đè những gì khó đoán từ văn bản thô. */

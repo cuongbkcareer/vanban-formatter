@@ -12,7 +12,7 @@ import { splitAgencyName } from './classify';
 import type { BodyBlock, Model, PlaceDate } from './types';
 
 /* Kiểu lỏng của layout.json, để truy cập các khoá tuỳ chọn mà không bị TS suy ra union hẹp. */
-interface Style {
+export interface Style {
   sizePt?: number;
   sizeRangePt?: [number, number];
   bold?: boolean;
@@ -23,19 +23,27 @@ interface Style {
   ruleRatio?: number;
   ruleMatchesText?: boolean;
 }
-interface Layout {
+export interface Layout {
   font: string;
   page: {
     widthMm: number;
     heightMm: number;
-    margins: { topMm: number; bottomMm: number; leftMm: number; rightMm: number };
+    margins: {
+      topMm: number;
+      bottomMm: number;
+      leftMm: number;
+      rightMm: number;
+      range?: { topMm: [number, number]; bottomMm: [number, number]; leftMm: [number, number]; rightMm: [number, number] };
+    };
     headerDistanceMm: number;
     footerDistanceMm: number;
-    pageNumber: { sizePt: number; hideOnFirstPage: boolean };
+    pageNumber: { sizePt: number; hideOnFirstPage: boolean } | null;
   };
   defaults: {
     bodySizePt: number;
+    bodySizeRangePt?: [number, number];
     lineSpacing: number;
+    lineSpacingRange?: [number, number];
     paragraphSpaceBeforePt: number;
     firstLineIndentMm: number;
   };
@@ -53,6 +61,7 @@ interface Layout {
   title: { docTypeName: Style; subject: Style };
   addressee: Style;
   body: {
+    paragraph: Style;
     basis: { italicFor: string[] };
     enact: Style;
     note: Style;
@@ -221,7 +230,7 @@ function bodyBlocks(m: Model, L: Layout): BlockNode[] {
     return {
       type: 'paragraph',
       runs: [run],
-      align: 'justify',
+      align: L.body.paragraph.align ?? 'justify',
       firstLineMm: D.firstLineIndentMm,
       ...base,
       ...over,
@@ -325,7 +334,7 @@ export function buildIR(m: Model, L: Layout = ND30_LAYOUT): DocumentIR {
       marginRightMm: P.margins.rightMm,
       headerDistanceMm: P.headerDistanceMm,
       footerDistanceMm: P.footerDistanceMm,
-      pageNumber: { ...P.pageNumber },
+      pageNumber: P.pageNumber ? { ...P.pageNumber } : null,
     },
     children: [
       ...headerBlock(m, L),

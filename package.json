@@ -1,6 +1,6 @@
 {
   "name": "vanban-formatter",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Định dạng văn bản thô thành văn bản hành chính đúng thể thức (NĐ 30/2020/NĐ-CP). Chạy hoàn toàn offline.",
   "private": true,
   "type": "module",
@@ -14,13 +14,14 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "docx": "^9.15.3"
+    "docx": "^9.15.3",
+    "jszip": "^3.10.2"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@types/office-js": "^1.0.616",
+    "@xmldom/xmldom": "^0.9.12",
     "esbuild": "^0.28.2",
-    "jszip": "^3.10.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"

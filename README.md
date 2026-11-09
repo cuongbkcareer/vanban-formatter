@@ -34,6 +34,21 @@ npm run release    # build + tạo dist/vanban-formatter-addin-vX.Y.Z.zip
 ADDIN_BASE_URL=https://may-chu-noi-bo/vanban npm run build   # manifest trỏ tới máy chủ tự host
 ```
 
+## Học định dạng từ file mẫu (mọi loại văn bản)
+
+Trong khung add-in (hoặc bản web), mục "Mẫu định dạng" cho phép:
+
+1. **Học** từ một file Word đã chuẩn (văn bản hành chính, giáo án, báo cáo, ...): công cụ gom các đoạn thành vai trò theo kiểu trình bày
+   (căn lề, cỡ chữ, đậm/nghiêng, thụt lề, giãn dòng, nằm trong bảng ở cột nào), học dấu hiệu nhận ra từng vai trò
+   (đánh số `I.` `1.` `a)`, gạch đầu dòng, chữ in hoa, kết thúc bằng dấu `:`, dài hay ngắn) và lề trang.
+2. **Kiểm tra** tài liệu khác theo mẫu: liệt kê đoạn nào lệch định dạng và lệch ở đâu; bấm vào dòng để chọn đoạn trong Word.
+3. **Sửa tự động** trực tiếp trong tài liệu đang mở (hoàn tác được bằng Cmd+Z / Ctrl+Z).
+4. Lưu nhiều mẫu, xuất/nhập file `.json` để chia sẻ cho đồng nghiệp.
+
+Giới hạn hiện tại: sửa được định dạng đoạn (căn lề, cỡ chữ, đậm/nghiêng, font, thụt lề, giãn dòng); chưa chỉnh được khung bảng
+(viền, độ rộng cột, tô nền), lề trang chỉ báo cáo chứ chưa tự sửa; chữ in hoa không tự đổi.
+Mã nguồn: `src/docx-read.ts` (đọc .docx/OOXML), `src/learn/profile.ts` (học, đoán vai trò, so sánh), `web/templates-ui.ts` (giao diện).
+
 ## Kiến trúc
 
 ```

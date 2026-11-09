@@ -195,7 +195,28 @@ export function splitAgencyName(text: string): string[] {
 }
 
 export function classify(raw: string): LabeledLine[] {
-  const lines = joinHardWraps(splitHeaderColumns(normalizeText(raw)));
+  return classifyLines(joinHardWraps(splitHeaderColumns(normalizeText(raw))));
+}
+
+/**
+ * Phân loại danh sách đoạn đã có sẵn (mỗi phần tử = một đoạn của file Word, có thể là đoạn trống).
+ * Không nối dòng, không bỏ đoạn: kết quả mang `para` = chỉ số đoạn gốc.
+ */
+export function classifyParagraphs(texts: string[]): (LabeledLine & { para: number })[] {
+  const lines: string[] = [];
+  const orig: number[] = [];
+  texts.forEach((t, i) => {
+    const l = t.normalize('NFC').replace(/[\u00A0\u2007\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (l) {
+      lines.push(l);
+      orig.push(i);
+    }
+  });
+  return classifyLines(lines).map((l) => ({ ...l, para: orig[l.src ?? 0] ?? 0 }));
+}
+
+/** Lõi phân loại: mỗi phần tử của `lines` là một đoạn. Mỗi nhãn trả về mang `src` = chỉ số trong `lines`. */
+export function classifyLines(lines: string[]): LabeledLine[] {
   const tail = detectTail(lines);
   const hasArticles = lines.some((l, i) => !tail.has(i) && RE_ARTICLE.test(l));
 
@@ -206,14 +227,16 @@ export function classify(raw: string): LabeledLine[] {
   let chapterTitleNext = false;
   const seen = { docType: false, subject: false, number: false, date: false, basis: false, enact: false };
 
+  let cur = 0;
   const push = (label: Label, text: string, confidence = 0.95, note?: string): void => {
-    out.push(note ? { label, text, confidence, note } : { label, text, confidence });
+    out.push(note ? { label, text, confidence, note, src: cur } : { label, text, confidence, src: cur });
   };
 
   for (let i = 0; i < lines.length; i++) {
+    cur = i;
     const preset = tail.get(i);
     if (preset) {
-      out.push(preset);
+      out.push({ ...preset, src: i });
       continue;
     }
     const line = lines[i] ?? '';

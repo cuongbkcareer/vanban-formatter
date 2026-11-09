@@ -41,6 +41,13 @@
     .line .sel { grid-column: auto; }
   }
   .hidden { display: none; }
+  h3 { font-size: 14px; margin: 14px 0 4px; }
+  .role { border: 1px solid var(--b); border-radius: 6px; padding: 6px 8px; margin: 6px 0; font-size: 12px; }
+  .role input { margin-bottom: 4px; }
+  .issue { padding: 4px 6px; border-bottom: 1px solid var(--b); font-size: 13px; cursor: default; }
+  .issue.go { cursor: pointer; }
+  .issue.go:hover { background: var(--warn); color: #222; }
+  .ok { color: #1b6e2f; font-weight: 600; }
   body:not([data-host="word"]) .word-only { display: none; }
   body[data-host="word"] .web-only { display: none; }
   body[data-host="unsupported"] main { display: none; }
@@ -79,7 +86,7 @@
     <label>Chức vụ người ký (dấu | để xuống dòng)<input id="o-stitle" placeholder="TM. ỦY BAN NHÂN DÂN | CHỦ TỊCH"></label>
     <label>Họ tên người ký<input id="o-sname" placeholder="Nguyễn Văn A"></label>
   </div>
-  <div class="row"><button id="analyze">Kiểm tra và sửa từng dòng</button></div>
+  <div class="row"><button id="analyze">Kiểm tra và sửa từng dòng</button><button id="o-forget" title="Xoá thông tin cơ quan mà công cụ đã nhớ trên máy này">Quên thông tin đã nhớ</button></div>
 
   <div id="review" class="hidden">
     <p class="hint">Mỗi dòng đã được gán một nhãn. Dòng nền vàng là độ tin cậy thấp. Sửa nhãn nếu sai rồi bấm nút bên dưới.</p>
@@ -90,6 +97,41 @@
       <button class="word-only" id="replace" title="Thử nghiệm: có thể không áp dụng lề trang và số trang">Thay nội dung tài liệu đang mở</button>
     </div>
   </div>
+</details>
+
+<details id="templates">
+  <summary>Mẫu định dạng: học từ file mẫu, kiểm tra và sửa theo mẫu</summary>
+  <p class="hint">Dùng một file Word đã chuẩn làm mẫu (văn bản hành chính, giáo án, báo cáo, bất kỳ loại nào). Công cụ học cách trình bày rồi kiểm tra hoặc sửa tài liệu khác theo mẫu đó. Xử lý ngay trên máy bạn, không dùng AI, không gửi dữ liệu đi.</p>
+  <label>Mẫu đang dùng
+    <select id="t-active"><option value="">(chưa có mẫu)</option></select>
+  </label>
+  <div class="row">
+    <button id="t-learn-doc" class="word-only">Học từ tài liệu đang mở</button>
+    <button id="t-learn-file">Học từ file .docx…</button>
+    <button id="t-export">Xuất mẫu (.json)</button>
+    <button id="t-import">Nhập mẫu (.json)…</button>
+    <button id="t-delete">Xoá mẫu này</button>
+  </div>
+  <input type="file" id="t-file-docx" accept=".docx" class="hidden">
+  <input type="file" id="t-file-json" accept=".json,application/json" class="hidden">
+  <input type="file" id="t-file-check" accept=".docx" class="hidden">
+  <textarea id="t-json" class="hidden" readonly style="min-height:90px" aria-label="Nội dung mẫu (.json) để sao chép"></textarea>
+
+  <div id="t-learned" class="hidden">
+    <h3>Mẫu vừa học</h3>
+    <label>Tên mẫu<input id="t-name" placeholder="Giáo án môn Toán"></label>
+    <p class="hint">Công cụ gom các đoạn của file mẫu thành những vai trò. Bạn đổi tên cho dễ nhớ, rồi bấm Lưu mẫu.</p>
+    <div id="t-roles"></div>
+    <div class="row"><button class="primary" id="t-save">Lưu mẫu này và dùng ngay</button></div>
+  </div>
+
+  <h3>Dùng mẫu đang chọn</h3>
+  <div class="row">
+    <button id="t-check-doc" class="word-only">Kiểm tra tài liệu đang mở</button>
+    <button id="t-check-file">Kiểm tra file .docx…</button>
+    <button id="t-fix" class="primary word-only" title="Sửa trực tiếp trong tài liệu đang mở. Có thể hoàn tác bằng Cmd+Z / Ctrl+Z.">Sửa tự động theo mẫu</button>
+  </div>
+  <div id="t-result"></div>
 </details>
 </main>
 <!--SCRIPT-->

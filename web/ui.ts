@@ -9,7 +9,11 @@ import {
   type LabeledLine,
   type Options,
 } from '../src/profiles/vn-nd30';
+import type { DocFormat } from '../src/docx-read';
+import type { FixItem, FormatProfile } from '../src/learn/profile';
 import { renderDocxBase64 } from '../src/render-docx';
+import { mountTemplates } from './templates-ui';
+import { loadOptions, saveOptions } from './storage';
 
 /** Nơi giao diện chạy: trang web độc lập hoặc khung bên cạnh trong Word. */
 export interface Host {
@@ -22,6 +26,12 @@ export interface Host {
   openNew?: (base64: string) => Promise<void>;
   /** Thay nội dung tài liệu đang mở. */
   replaceCurrent?: (base64: string) => Promise<void>;
+  /** Đọc định dạng của tài liệu đang mở (chỉ có trong Word). */
+  readFormat?: () => Promise<DocFormat>;
+  /** Chọn (bôi đen) một đoạn trong tài liệu đang mở theo chỉ số đoạn. */
+  selectParagraph?: (index: number) => Promise<void>;
+  /** Sửa định dạng trực tiếp trong tài liệu đang mở. */
+  applyFixes?: (items: FixItem[], profile: FormatProfile) => Promise<{ applied: number; skipped: number; capsNotApplied: number }>;
 }
 
 const SAMPLE = `UBND HUYỆN MẪU
@@ -218,5 +228,20 @@ export function mountUI(host: Host): void {
   $('download').addEventListener('click', act(({ base64, filename }) => host.save?.(base64, filename), 'Đã tạo file .docx.'));
   $('open-new').addEventListener('click', act(({ base64 }) => host.openNew?.(base64), 'Đã mở văn bản đúng thể thức thành tài liệu mới.'));
   $('replace').addEventListener('click', act(({ base64 }) => host.replaceCurrent?.(base64), 'Đã thay nội dung. Hãy kiểm tra lề trang và số trang.'));
-  for (const id of OPTION_IDS) $(id).addEventListener('input', () => lines.length && renderWarnings());
+  // Nhớ thông tin cơ quan trên máy này (không gửi đi đâu).
+  const saved = loadOptions();
+  for (const id of OPTION_IDS) {
+    const el = $<HTMLInputElement | HTMLSelectElement>(id);
+    if (saved[id]) el.value = saved[id] as string;
+    el.addEventListener('input', () => {
+      saveOptions(Object.fromEntries(OPTION_IDS.map((k) => [k, $<HTMLInputElement | HTMLSelectElement>(k).value])));
+      if (lines.length) renderWarnings();
+    });
+  }
+  $('o-forget').addEventListener('click', () => {
+    saveOptions({});
+    for (const id of OPTION_IDS) $<HTMLInputElement | HTMLSelectElement>(id).value = '';
+    status('Đã xoá thông tin cơ quan đã nhớ.');
+  });
+  mountTemplates(host, status);
 }

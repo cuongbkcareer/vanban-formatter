@@ -6,7 +6,7 @@ import type { LabeledLine, Model, Options } from './types';
 
 export { assemble } from './assemble';
 export { buildIR, ND30_LAYOUT, formatDate } from './build-ir';
-export { classify, parsePlaceDate, splitAgencyName } from './classify';
+export { classify, classifyLines, classifyParagraphs, parsePlaceDate, splitAgencyName } from './classify';
 export * from './types';
 
 export interface FormatResult {
