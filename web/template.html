@@ -171,7 +171,7 @@
 
   .summary { margin: 14px 0 0; padding: 9px 12px; border-radius: 8px; background: var(--warn-soft); border-left: 3px solid var(--warn-line); font-size: 13px; font-weight: 500; }
   .summary.ok { background: var(--ok-soft); border-left-color: var(--ok); color: var(--ok); }
-  #t-result > .hint { margin: 8px 0 0; }
+  #t-result > .hint, #n-result > .hint { margin: 8px 0 0; }
   .issue { padding: 7px 4px; border-bottom: 1px solid var(--line); font-size: 12.5px; overflow-wrap: anywhere; }
   .issue:last-child { border-bottom: 0; }
   .issue.go { cursor: pointer; border-radius: 6px; padding: 7px 8px; }
@@ -253,6 +253,20 @@
   </details>
 
   <div class="row"><button id="analyze">Xem và sửa nhận diện từng dòng</button></div>
+
+  <div class="card" id="nd30-check">
+    <h2>Kiểm tra văn bản đã soạn</h2>
+    <p class="hint">Kiểm tra một văn bản có sẵn xem đã đúng thể thức NĐ 30 chưa: lề trang, phông và cỡ chữ, căn lề, quốc hiệu, trích yếu, nơi nhận, chữ ký, cách viết ngày tháng. Với văn bản đang mở trong Word, có thể sửa định dạng ngay tại chỗ, giữ nguyên nội dung.</p>
+    <div class="row grow">
+      <button id="n-check-doc" class="word-only">Kiểm tra tài liệu đang mở</button>
+      <button id="n-check-file">Kiểm tra file .docx…</button>
+    </div>
+    <div class="row">
+      <button id="n-fix" class="primary word-only" style="width:100%" title="Sửa trực tiếp trong tài liệu đang mở. Có thể hoàn tác bằng Cmd+Z / Ctrl+Z.">Sửa định dạng theo NĐ 30</button>
+    </div>
+    <input type="file" id="n-file" accept=".docx" class="hidden">
+    <div id="n-result"></div>
+  </div>
 
   <div id="review" class="card hidden">
     <h2>Nhận diện từng dòng</h2>

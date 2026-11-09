@@ -12,6 +12,7 @@ import {
 import type { DocFormat } from '../src/docx-read';
 import type { FixItem, FormatProfile, TableFix } from '../src/learn/profile';
 import { renderDocxBase64 } from '../src/render-docx';
+import { mountNd30Check } from './nd30-ui';
 import { mountTemplates } from './templates-ui';
 import { loadOptions, ORG_FIELD_IDS, saveOptions } from './storage';
 
@@ -31,7 +32,7 @@ export interface Host {
   /** Chọn (bôi đen) một đoạn trong tài liệu đang mở theo chỉ số đoạn. */
   selectParagraph?: (index: number) => Promise<void>;
   /** Sửa định dạng trực tiếp trong tài liệu đang mở. */
-  applyFixes?: (items: FixItem[], profile: FormatProfile) => Promise<{ applied: number; skipped: number; capsNotApplied: number }>;
+  applyFixes?: (items: FixItem[], profile?: FormatProfile) => Promise<{ applied: number; skipped: number; capsNotApplied: number }>;
   /** Sửa khung bảng (viền, độ rộng cột, tô nền hàng tiêu đề ...) trong tài liệu đang mở. */
   applyTableFixes?: (items: TableFix[]) => Promise<{ applied: number; notes: string[] }>;
 }
@@ -246,6 +247,7 @@ export function mountUI(host: Host): void {
     status('Đã xoá thông tin cơ quan đã nhớ.');
   });
   mountTemplates(host, status);
+  mountNd30Check(host, status);
 
   // Chuyển mục: "Chuẩn hoá" và "Mẫu định dạng".
   const tabIds = ['format', 'template'];

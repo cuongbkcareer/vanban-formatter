@@ -2,15 +2,13 @@ import { readDocx, type DocFormat } from '../src/docx-read';
 import {
   checkAgainstProfile,
   describeTableSpec,
-  FIELD_NAMES,
   learnProfile,
   planFixes,
   planTableFixes,
-  showValue,
-  TABLE_FIELD_NAMES,
   type FormatProfile,
   type Role,
 } from '../src/learn/profile';
+import { renderCheckResult } from './check-view';
 import { getActiveName, isProfile, loadProfiles, saveProfiles, setActiveName } from './storage';
 import type { Host } from './ui';
 
@@ -185,61 +183,20 @@ export function mountTemplates(host: Host, status: Status): void {
     const profile = active();
     if (!profile) return status('Hãy chọn hoặc học một mẫu trước khi kiểm tra.', 'error');
     const r = checkAgainstProfile(profile, doc);
-    result.replaceChildren();
-    const head = document.createElement('p');
-    if (r.issues.length === 0 && r.page.length === 0 && r.tables.length === 0) {
-      head.className = 'summary ok';
-      head.textContent = `Đạt mẫu “${profile.name}”: ${r.paragraphs} đoạn đều đúng định dạng.`;
-    } else {
-      head.className = 'summary';
-      head.textContent = `Theo mẫu “${profile.name}”: ${r.issues.length}/${r.paragraphs} đoạn lệch định dạng, ${r.tables.length} bảng sai khung, ${r.page.length} lỗi trang.`;
-    }
-    result.append(head);
-    if (!doc.page) {
-      const n = document.createElement('p');
-      n.className = 'hint';
-      n.textContent = 'Không đọc được lề trang từ nguồn này nên chưa kiểm tra lề.';
-      result.append(n);
-    }
-    for (const pg of r.page) {
-      const d = document.createElement('div');
-      d.className = 'issue';
-      d.textContent = `Trang: ${pg.field} là ${pg.actual} (mẫu: ${pg.expected}). Chỉnh trong Bố cục > Lề.`;
-      result.append(d);
-    }
-    for (const ti of r.tables) {
-      const d = document.createElement('div');
-      d.className = 'issue';
-      d.textContent = `Bảng ${ti.tableIndex + 1} (${ti.cols} cột): ${ti.diffs
-        .map((x) => `${TABLE_FIELD_NAMES[x.field]} ${x.actual} (mẫu: ${x.expected})`)
-        .join('; ')}`;
-      result.append(d);
-    }
-    if (r.unmatchedTables.length) {
-      const m = document.createElement('p');
-      m.className = 'hint';
-      m.textContent = `${r.unmatchedTables.length} bảng có số cột khác với bảng trong mẫu nên chưa kiểm tra khung (bảng ${r.unmatchedTables.map((x) => x + 1).join(', ')}). Muốn kiểm tra, hãy thêm một bảng cùng số cột vào file mẫu rồi học lại.`;
-      result.append(m);
-    }
-    for (const i of r.issues.slice(0, 300)) {
-      const d = document.createElement('div');
-      d.className = fromOpenDoc && host.selectParagraph ? 'issue go' : 'issue';
-      d.textContent = `Đoạn ${i.index + 1} [${i.roleName}] “${i.text}”: ${i.diffs
-        .map((x) => `${FIELD_NAMES[x.field]} ${showValue(x.field, x.actual)} (mẫu: ${showValue(x.field, x.expected)})`)
-        .join('; ')}`;
-      if (fromOpenDoc && host.selectParagraph) {
-        d.title = 'Bấm để chọn đoạn này trong tài liệu';
-        d.addEventListener('click', () => void host.selectParagraph?.(i.index));
-      }
-      result.append(d);
-    }
-    if (r.issues.length > 300) {
-      const m = document.createElement('p');
-      m.className = 'hint';
-      m.textContent = `… còn ${r.issues.length - 300} đoạn khác.`;
-      result.append(m);
-    }
-    status(head.textContent ?? '');
+    const hints: string[] = [];
+    if (!doc.page) hints.push('Không đọc được lề trang từ nguồn này nên chưa kiểm tra lề.');
+    if (r.unmatchedTables.length)
+      hints.push(
+        `${r.unmatchedTables.length} bảng có số cột khác với bảng trong mẫu nên chưa kiểm tra khung (bảng ${r.unmatchedTables.map((x) => x + 1).join(', ')}). Muốn kiểm tra, hãy thêm một bảng cùng số cột vào file mẫu rồi học lại.`,
+      );
+    const text = renderCheckResult(result, r, {
+      okText: `Đạt mẫu “${profile.name}”: ${r.paragraphs} đoạn đều đúng định dạng.`,
+      badText: `Theo mẫu “${profile.name}”: ${r.issues.length}/${r.paragraphs} đoạn lệch định dạng, ${r.tables.length} bảng sai khung, ${r.page.length} lỗi trang.`,
+      host,
+      fromOpenDoc,
+      hints,
+    });
+    status(text);
   }
 
   $('t-check-doc').addEventListener('click', async () => {

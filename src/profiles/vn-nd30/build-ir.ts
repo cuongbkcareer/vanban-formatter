@@ -46,6 +46,7 @@ export interface Layout {
     lineSpacingRange?: [number, number];
     paragraphSpaceBeforePt: number;
     firstLineIndentMm: number;
+    firstLineIndentRangeMm?: [number, number];
   };
   header: {
     leftColumnMm: number;

@@ -48,7 +48,7 @@ export const wordHost: Host = {
     });
   },
 
-  async applyFixes(items: FixItem[], _profile: FormatProfile) {
+  async applyFixes(items: FixItem[], _profile?: FormatProfile) {
     const norm = (s: string): string => cleanWordText(s).replace(/\s+/g, ' ').trim();
     const ALIGN = { left: 'Left', center: 'Centered', right: 'Right', justify: 'Justified' } as const;
     const MM = 72 / 25.4;

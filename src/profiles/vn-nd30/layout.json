@@ -24,6 +24,7 @@
     "lineSpacingRange": [1, 1.5],
     "paragraphSpaceBeforePt": 6,
     "firstLineIndentMm": 12.7,
+    "firstLineIndentRangeMm": [10, 12.7],
     "date": { "padDayBelow": 10, "padMonths": [1, 2] }
   },
   "header": {

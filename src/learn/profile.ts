@@ -438,8 +438,11 @@ const TOL: Partial<Record<Field, number>> = {
 
 export interface FieldDiff {
   field: Field;
+  /** Giá trị sẽ đặt khi sửa tự động. */
   expected: RoleFormat[Field];
   actual: RoleFormat[Field];
+  /** Cách nói cho người đọc khi chuẩn là một khoảng (ví dụ "13 đến 14 pt"). */
+  expectedLabel?: string;
 }
 
 export function diffFormat(expected: RoleFormat, actual: RoleFormat, profileFont?: string): FieldDiff[] {
@@ -569,7 +572,7 @@ const SIDE_NAMES: Record<keyof TableBorders, string> = {
 
 const showBorder = (b: BorderFmt | null): string => (b ? `${b.sizePt} pt #${b.color}${b.style !== 'single' ? ` ${b.style}` : ''}` : 'không');
 
-function describeBorders(b: TableBorders): string {
+export function describeBorders(b: TableBorders): string {
   const sides = Object.keys(SIDE_NAMES) as (keyof TableBorders)[];
   if (sides.every((s) => !b[s])) return 'không viền';
   const same = (x: BorderFmt | null, y: BorderFmt | null): boolean => (x === null && y === null) || (!!x && !!y && showBorder(x) === showBorder(y));
@@ -577,7 +580,7 @@ function describeBorders(b: TableBorders): string {
   return sides.map((s) => `${SIDE_NAMES[s]}: ${showBorder(b[s])}`).join(', ');
 }
 
-function bordersEqual(a: TableBorders, b: TableBorders): boolean {
+export function bordersEqual(a: TableBorders, b: TableBorders): boolean {
   for (const s of Object.keys(SIDE_NAMES) as (keyof TableBorders)[]) {
     const x = a[s];
     const y = b[s];

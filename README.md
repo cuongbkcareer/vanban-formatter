@@ -34,6 +34,15 @@ npm run release    # build + tạo dist/vanban-formatter-addin-vX.Y.Z.zip
 ADDIN_BASE_URL=https://may-chu-noi-bo/vanban npm run build   # manifest trỏ tới máy chủ tự host
 ```
 
+## Kiểm tra và sửa văn bản theo NĐ 30
+
+Trong thẻ "Chuẩn hoá", mục "Kiểm tra văn bản đã soạn" kiểm tra một văn bản có sẵn (tài liệu đang mở trong Word, hoặc file `.docx`):
+lề trang và khổ giấy, phông chữ, cỡ chữ, căn lề, thụt đầu dòng, giãn dòng, chữ đậm/nghiêng/in hoa của từng thành phần
+(cơ quan ban hành, quốc hiệu, tiêu ngữ, số ký hiệu, ngày tháng, tên loại, trích yếu, căn cứ, nơi nhận, chữ ký), bảng dàn trang không viền,
+cách viết ngày tháng (thêm số 0 cho ngày dưới 10 và tháng 1, 2) và các thành phần còn thiếu. Quy cách nào NĐ 30 cho một khoảng (ví dụ cỡ chữ 13 đến 14)
+thì nằm trong khoảng là đạt. Trong Word, nút "Sửa định dạng theo NĐ 30" sửa tại chỗ, giữ nguyên nội dung, hoàn tác được. Số liệu quy cách lấy từ
+`src/profiles/vn-nd30/layout.json` (chưa đối chiếu văn bản gốc, xem trường `verified`).
+
 ## Học định dạng từ file mẫu (mọi loại văn bản)
 
 Trong khung add-in (hoặc bản web), mục "Mẫu định dạng" cho phép:
