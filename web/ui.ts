@@ -13,7 +13,7 @@ import type { DocFormat } from '../src/docx-read';
 import type { FixItem, FormatProfile, TableFix } from '../src/learn/profile';
 import { renderDocxBase64 } from '../src/render-docx';
 import { mountTemplates } from './templates-ui';
-import { loadOptions, saveOptions } from './storage';
+import { loadOptions, ORG_FIELD_IDS, saveOptions } from './storage';
 
 /** Nơi giao diện chạy: trang web độc lập hoặc khung bên cạnh trong Word. */
 export interface Host {
@@ -49,8 +49,6 @@ Nơi nhận:
 - Lưu: VT, NV.
 TRƯỞNG PHÒNG
 Nguyễn Văn An`;
-
-const OPTION_IDS = ['o-type', 'o-parent', 'o-issuer', 'o-place', 'o-date', 'o-number', 'o-stitle', 'o-sname'];
 
 export function mountUI(host: Host): void {
   const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -230,19 +228,21 @@ export function mountUI(host: Host): void {
   $('download').addEventListener('click', act(({ base64, filename }) => host.save?.(base64, filename), 'Đã tạo file .docx.'));
   $('open-new').addEventListener('click', act(({ base64 }) => host.openNew?.(base64), 'Đã mở văn bản đúng thể thức thành tài liệu mới.'));
   $('replace').addEventListener('click', act(({ base64 }) => host.replaceCurrent?.(base64), 'Đã thay nội dung. Hãy kiểm tra lề trang và số trang.'));
-  // Nhớ thông tin cơ quan trên máy này (không gửi đi đâu).
+  // Nhớ thông tin cơ quan trên máy này (không gửi đi đâu). Số, ngày và loại văn bản thì không nhớ.
   const saved = loadOptions();
-  for (const id of OPTION_IDS) {
-    const el = $<HTMLInputElement | HTMLSelectElement>(id);
-    if (saved[id]) el.value = saved[id] as string;
+  const orgValues = (): Record<string, string> =>
+    Object.fromEntries(ORG_FIELD_IDS.map((k) => [k, $<HTMLInputElement>(k).value]));
+  for (const id of ORG_FIELD_IDS) {
+    const el = $<HTMLInputElement>(id);
+    if (saved[id]) el.value = saved[id];
     el.addEventListener('input', () => {
-      saveOptions(Object.fromEntries(OPTION_IDS.map((k) => [k, $<HTMLInputElement | HTMLSelectElement>(k).value])));
+      saveOptions(orgValues());
       if (lines.length) renderWarnings();
     });
   }
   $('o-forget').addEventListener('click', () => {
     saveOptions({});
-    for (const id of OPTION_IDS) $<HTMLInputElement | HTMLSelectElement>(id).value = '';
+    for (const id of ORG_FIELD_IDS) $<HTMLInputElement>(id).value = '';
     status('Đã xoá thông tin cơ quan đã nhớ.');
   });
   mountTemplates(host, status);

@@ -38,6 +38,21 @@ export const saveProfiles = (list: FormatProfile[]): void => write(K_PROFILES, l
 export const getActiveName = (): string => read<string>(K_ACTIVE, '');
 export const setActiveName = (name: string): void => write(K_ACTIVE, name);
 
-/** Thông tin cơ quan hay dùng (loại văn bản, cơ quan, địa danh, người ký ...). */
-export const loadOptions = (): Record<string, string> => read<Record<string, string>>(K_OPTIONS, {});
-export const saveOptions = (o: Record<string, string>): void => write(K_OPTIONS, o);
+/**
+ * Chỉ các ô thuộc về cơ quan mới được nhớ. Loại văn bản, số/ký hiệu và ngày ban hành
+ * khác nhau ở mỗi văn bản nên không lưu (nếu lưu sẽ ghi đè lên văn bản sau).
+ */
+export const ORG_FIELD_IDS = ['o-parent', 'o-issuer', 'o-place', 'o-stitle', 'o-sname'] as const;
+
+export function pickOrgFields(o: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const id of ORG_FIELD_IDS) {
+    const v = o[id];
+    if (typeof v === 'string' && v.trim()) out[id] = v;
+  }
+  return out;
+}
+
+/** Đọc thông tin cơ quan đã nhớ (bỏ các ô cũ không còn được nhớ, vd. số và ngày của bản trước). */
+export const loadOptions = (): Record<string, string> => pickOrgFields(read<Record<string, unknown>>(K_OPTIONS, {}));
+export const saveOptions = (o: Record<string, unknown>): void => write(K_OPTIONS, pickOrgFields(o));
