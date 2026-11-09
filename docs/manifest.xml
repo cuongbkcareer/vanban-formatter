@@ -6,7 +6,7 @@
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
   <Id>81a47bdf-3c91-4d65-9322-112a4078e6c5</Id>
-  <Version>0.1.1.0</Version>
+  <Version>0.1.2.0</Version>
   <ProviderName>vanban-formatter</ProviderName>
   <DefaultLocale>vi-VN</DefaultLocale>
   <DisplayName DefaultValue="Chuẩn hoá văn bản hành chính"/>
@@ -33,6 +33,12 @@
     <Hosts>
       <Host xsi:type="Document">
         <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
               <Group id="VanBanGroup">
@@ -72,13 +78,17 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="https://cuongbkcareer.github.io/vanban-formatter/taskpane.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://cuongbkcareer.github.io/vanban-formatter/commands.html"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/cuongbkcareer/vanban-formatter#readme"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Group.Label" DefaultValue="Văn bản hành chính"/>
         <bt:String id="Button.Label" DefaultValue="Chuẩn hoá NĐ 30"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Chuẩn hoá văn bản hành chính"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="Button.Tip" DefaultValue="Mở khung chuẩn hoá văn bản hành chính theo NĐ 30/2020/NĐ-CP"/>
+        <bt:String id="GetStarted.Description" DefaultValue="Add-in đã sẵn sàng. Bấm nút Chuẩn hoá NĐ 30 ở thẻ Trang đầu (Home) để chuẩn hoá văn bản."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

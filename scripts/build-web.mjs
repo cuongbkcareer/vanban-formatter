@@ -49,6 +49,11 @@ await writeFile(
   ),
 );
 await writeFile(`${OUT}/taskpane.js`, addinJs);
+// Trang "FunctionFile" mà manifest tham chiếu (theo mẫu manifest chuẩn của Microsoft); chưa có lệnh chạy ngầm nào.
+await writeFile(
+  `${OUT}/commands.html`,
+  `<!DOCTYPE html>\n<html lang="vi"><head><meta charset="utf-8">\n${ADDIN_CSP}\n<title>Commands</title></head>\n<body><script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script></body></html>\n`,
+);
 for (const s of [16, 32, 80]) await copyFile(`assets/icon-${s}.png`, `${OUT}/assets/icon-${s}.png`);
 await writeFile(`${OUT}/manifest.xml`, generateManifest({ baseUrl, version: await readVersion() }));
 await writeFile(`${OUT}/.nojekyll`, '');

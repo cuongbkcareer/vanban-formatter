@@ -1,5 +1,5 @@
 // Sinh manifest.xml cho Word (Office Add-in, manifest XML 1.1: chạy trên Windows, Mac và Word web).
-import { ADDIN_ID, SUPPORT_URL } from './config.mjs';
+import { ADDIN_ID, REPO, SUPPORT_URL } from './config.mjs';
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -52,6 +52,12 @@ export function generateManifest({ baseUrl, version }) {
     <Hosts>
       <Host xsi:type="Document">
         <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
               <Group id="VanBanGroup">
@@ -91,13 +97,17 @@ export function generateManifest({ baseUrl, version }) {
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="${u('taskpane.html')}"/>
+        <bt:Url id="Commands.Url" DefaultValue="${u('commands.html')}"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="${esc(`https://github.com/${REPO}#readme`)}"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Group.Label" DefaultValue="Văn bản hành chính"/>
         <bt:String id="Button.Label" DefaultValue="Chuẩn hoá NĐ 30"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Chuẩn hoá văn bản hành chính"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="Button.Tip" DefaultValue="Mở khung chuẩn hoá văn bản hành chính theo NĐ 30/2020/NĐ-CP"/>
+        <bt:String id="GetStarted.Description" DefaultValue="Add-in đã sẵn sàng. Bấm nút Chuẩn hoá NĐ 30 ở thẻ Trang đầu (Home) để chuẩn hoá văn bản."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

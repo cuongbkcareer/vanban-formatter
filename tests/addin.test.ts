@@ -34,6 +34,19 @@ describe('manifest.xml', () => {
     for (const r of used) expect(defined.has(r), `thiếu resource ${r}`).toBe(true);
   });
 
+  it('có đủ các phần của mẫu manifest chuẩn: GetStarted, FunctionFile, nhóm trên thẻ Home', () => {
+    expect(xml).toContain('<FunctionFile resid="Commands.Url"/>');
+    expect(xml).toContain('<GetStarted>');
+    expect(xml).toContain('<OfficeTab id="TabHome">');
+    expect(xml).toContain('<Action xsi:type="ShowTaskpane">');
+  });
+
+  it('mọi resid và id tài nguyên đều không quá 32 ký tự (giới hạn của Office)', () => {
+    const ids = [...xml.matchAll(/(?:resid|<bt:(?:Image|Url|String) id)="([^"]+)"/g)].map((m) => m[1]!);
+    expect(ids.length).toBeGreaterThan(10);
+    for (const id of ids) expect(id.length, id).toBeLessThanOrEqual(32);
+  });
+
   it('từ chối host không dùng HTTPS', () => {
     expect(() => generateManifest({ baseUrl: 'http://x.test', version: '1.0.0' })).toThrow(/HTTPS/);
   });

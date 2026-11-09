@@ -45,6 +45,17 @@ Giải nén zip, mở Terminal, gõ `bash ` (có dấu cách), kéo file `CAI-DA
 
 Nếu không thấy nút trên thẻ Trang đầu: Chèn > Phần bổ trợ > Phần bổ trợ của tôi > Developer Add-ins.
 
+## Nút không hiện trên thẻ Trang đầu (Home)?
+
+Theo tài liệu của Microsoft, add-in cài thủ công trên Mac luôn tìm được ở **Home > Add-ins** (mục Developer Add-ins). Nút riêng trên thanh ribbon là tính năng thêm, không phải lúc nào cũng hiện với add-in cài thủ công.
+
+Nếu bạn vừa cài bản mới (v0.1.2 trở lên) mà vẫn thấy bản cũ hoặc chưa thấy nút, Word đang giữ manifest cũ trong bộ nhớ đệm:
+
+1. Thoát hẳn Word (Cmd+Q).
+2. Chạy lại lệnh cài ở trên (để chép manifest mới).
+3. Xoá **toàn bộ nội dung** (không xoá từng file riêng lẻ) của các thư mục sau bằng Finder (Đi > Đi tới thư mục): `~/Library/Containers/com.Microsoft.OsfWebHost/Data/` và `~/Library/Containers/com.microsoft.Word/Data/Library/Caches/`. Đừng xoá thư mục `wef` ở bước này, vì đó là nơi chứa manifest vừa cài.
+4. Mở lại Word, mở một tài liệu, vào Home > Add-ins.
+
 ## Windows
 
 > Phần Windows được viết theo tài liệu của Microsoft nhưng **chưa được kiểm thử trên máy Windows thật**. Nếu gặp lỗi, hãy dùng cách 2 và báo lại.

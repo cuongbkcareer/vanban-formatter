@@ -20,7 +20,7 @@ zip.file(`${root}/CAI-DAT-WINDOWS.bat`, (await read('installer/CAI-DAT-WINDOWS.b
 
 // bản web độc lập (chạy offline) và bản để tự host
 zip.file(`${root}/vanban.html`, await read('docs/vanban.html'));
-for (const f of ['taskpane.html', 'taskpane.js', 'assets/icon-16.png', 'assets/icon-32.png', 'assets/icon-80.png']) {
+for (const f of ['taskpane.html', 'commands.html', 'taskpane.js', 'assets/icon-16.png', 'assets/icon-32.png', 'assets/icon-80.png']) {
   zip.file(`${root}/tu-host/${f}`, await read(`docs/${f}`));
 }
 
