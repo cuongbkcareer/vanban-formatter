@@ -8,6 +8,7 @@ import type {
 } from '../../ir';
 import { estimateWidthMm, toUpperVi, wordCount } from '../../text';
 import layoutJson from './layout.json';
+import { splitAgencyName } from './classify';
 import type { BodyBlock, Model, PlaceDate } from './types';
 
 /* Kiểu lỏng của layout.json, để truy cập các khoá tuỳ chọn mà không bị TS suy ra union hẹp. */
@@ -54,6 +55,7 @@ interface Layout {
   body: {
     basis: { italicFor: string[] };
     enact: Style;
+    note: Style;
     authority: Style;
     chapter: Style;
     article: { shortTitleMaxWords: number };
@@ -127,7 +129,7 @@ function headerBlock(m: Model, L: Layout): BlockNode[] {
   const leftTop: BlockNode[] = [];
   for (const p of m.parentOrg) leftTop.push(para(p, H.parentOrg, { lineSpacing: 1 }));
   const issuerText = m.issuer ?? 'TÊN CƠ QUAN BAN HÀNH';
-  const issuerLines = issuerText.split('\n');
+  const issuerLines = issuerText.split('\n').flatMap(splitAgencyName);
   for (const line of issuerLines) leftTop.push(para(line, H.issuer, { lineSpacing: 1 }));
   const widest = Math.max(
     ...issuerLines.map((l) => estimateWidthMm(toUpperVi(l), H.issuer.sizePt ?? 13, true)),
@@ -228,6 +230,9 @@ function bodyBlocks(m: Model, L: Layout): BlockNode[] {
 
   for (const b of m.body as BodyBlock[]) {
     switch (b.kind) {
+      case 'note':
+        out.push(para(b.text, L.body.note, { ...base }));
+        break;
       case 'authority':
         out.push(para(b.text, L.body.authority, { ...base, keepNext: true }));
         break;

@@ -1,6 +1,7 @@
+import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
 import { TEST_DOCS } from '../fixtures/test-docs';
-import { assemble, classify, type Label } from '../src/profiles/vn-nd30';
+import { assemble, classify, formatNd30, splitAgencyName, type Label } from '../src/profiles/vn-nd30';
 
 const doc = (prefix: string) => {
   const d = TEST_DOCS.find((x) => x.file.startsWith(prefix));
@@ -31,12 +32,33 @@ describe('bộ văn bản thử add-in', () => {
     expect(model.warnings).toEqual([]);
   });
 
+  it('02 dòng "Theo đề nghị của…," thuộc phần căn cứ (in nghiêng như các dòng Căn cứ)', () => {
+    const { lines } = doc('02');
+    expect(texts(lines, 'basis')).toHaveLength(3);
+    expect(texts(lines, 'basis')[2]).toMatch(/^Theo đề nghị của/);
+    expect(texts(lines, 'enact')).toEqual(['QUYẾT ĐỊNH:']);
+  });
+
+  it('chỉ nhận "Theo/Xét …" là căn cứ khi nằm trong khối căn cứ, không phải đoạn nội dung sau "QUYẾT ĐỊNH:"', () => {
+    const lines = classify(['QUYẾT ĐỊNH', 'Về việc A', 'Căn cứ Luật X;', 'Theo đề nghị của Sở Y,', 'QUYẾT ĐỊNH:', 'Điều 1. Z.', 'Theo quy định này, các đơn vị thực hiện;'].join('\n'));
+    expect(lines.filter((l) => l.label === 'basis')).toHaveLength(2);
+    expect(lines.find((l) => l.text.startsWith('Theo quy định'))?.label).toBe('paragraph');
+  });
+
+  it('ngắt tên cơ quan đúng chỗ khi in', () => {
+    expect(splitAgencyName('ỦY BAN NHÂN DÂN THÀNH PHỐ MẪU')).toEqual(['ỦY BAN NHÂN DÂN', 'THÀNH PHỐ MẪU']);
+    expect(splitAgencyName('HỘI ĐỒNG NHÂN DÂN TỈNH ABC')).toEqual(['HỘI ĐỒNG NHÂN DÂN', 'TỈNH ABC']);
+    expect(splitAgencyName('SỞ XÂY DỰNG TỈNH ABC')).toEqual(['SỞ XÂY DỰNG TỈNH ABC']);
+    expect(splitAgencyName('ỦY BAN NHÂN DÂN')).toEqual(['ỦY BAN NHÂN DÂN']);
+  });
+
   it('03 quy chế: chương, điều, khoản', () => {
     const { lines } = doc('03');
     expect(texts(lines, 'chapter')).toEqual(['Chương I', 'Chương II']);
     expect(texts(lines, 'chapter-title')).toEqual(['QUY ĐỊNH CHUNG', 'TỔ CHỨC THỰC HIỆN']);
     expect(texts(lines, 'article')).toHaveLength(4);
     expect(lines.some((l) => l.label.startsWith('heading'))).toBe(false);
+    expect(texts(lines, 'attachment-note')).toEqual(['(Ban hành kèm theo Quyết định số 56/QĐ-UBND ngày 12 tháng 1 năm 2026)']);
   });
 
   it('04 báo cáo: các cấp tiêu đề', () => {
@@ -77,5 +99,37 @@ describe('bộ văn bản thử add-in', () => {
     for (const part of ['cơ quan ban hành', 'số, ký hiệu', 'địa danh', 'ngày, tháng, năm', 'chức vụ người ký', 'họ tên người ký', 'nơi nhận']) {
       expect(w.toLowerCase()).toContain(part);
     }
+  });
+});
+
+describe('định dạng trong file .docx của bộ văn bản thử', () => {
+  async function paragraphXml(prefix: string, needle: string): Promise<string> {
+    const d = TEST_DOCS.find((x) => x.file.startsWith(prefix))!;
+    const r = await formatNd30(d.lines.join('\n'));
+    const xml = await (await JSZip.loadAsync(r.docx)).file('word/document.xml')!.async('string');
+    const at = xml.indexOf(needle);
+    expect(at, `không thấy "${needle}"`).toBeGreaterThan(-1);
+    const start = xml.lastIndexOf('<w:p>', at);
+    return xml.slice(start, xml.indexOf('</w:p>', at));
+  }
+
+  it('02: dòng "Theo đề nghị của …" in nghiêng như các dòng Căn cứ', async () => {
+    expect(await paragraphXml('02', 'Theo đề nghị của')).toContain('<w:i/>');
+    expect(await paragraphXml('02', 'Căn cứ Luật')).toContain('<w:i/>');
+  });
+
+  it('02: tên cơ quan ngắt thành hai dòng đậm, căn giữa', async () => {
+    for (const line of ['ỦY BAN NHÂN DÂN<', 'THÀNH PHỐ MẪU']) {
+      const p = await paragraphXml('02', line);
+      expect(p).toContain('<w:b/>');
+      expect(p).toContain('w:val="center"');
+    }
+  });
+
+  it('03: "(Ban hành kèm theo …)" căn giữa, in nghiêng, không thụt đầu dòng', async () => {
+    const p = await paragraphXml('03', '(Ban hành kèm theo');
+    expect(p).toContain('<w:i/>');
+    expect(p).toContain('w:val="center"');
+    expect(p).not.toContain('w:firstLine');
   });
 });

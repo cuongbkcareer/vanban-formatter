@@ -86,7 +86,8 @@ describe('quyết định (dán từ bảng Word có tab)', () => {
     expect(textOf(raw, 'doc-type')).toEqual(['QUYẾT ĐỊNH']);
     expect(textOf(raw, 'subject')[0]).toMatch(/^Về việc ban hành/);
     expect(textOf(raw, 'authority')).toEqual(['CHỦ TỊCH ỦY BAN NHÂN DÂN HUYỆN MẪU']);
-    expect(textOf(raw, 'basis')).toHaveLength(2);
+    // 2 dòng "Căn cứ" + dòng "Theo đề nghị của …," (cùng khối căn cứ, in nghiêng)
+    expect(textOf(raw, 'basis')).toHaveLength(3);
     expect(textOf(raw, 'enact')).toEqual(['QUYẾT ĐỊNH:']);
     expect(textOf(raw, 'article')).toHaveLength(3);
   });

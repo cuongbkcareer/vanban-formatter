@@ -43,7 +43,7 @@ export const TEST_DOCS: TestDoc[] = [
     file: '02-quyet-dinh-quy-che',
     title: 'Quyết định ban hành quy chế (có Chương, Điều, khoản)',
     expect:
-      'Tên loại QUYẾT ĐỊNH + trích yếu có gạch chân. Dòng CHỦ TỊCH … in đậm giữa trang, các dòng Căn cứ in nghiêng, "QUYẾT ĐỊNH:" in đậm giữa. "Điều N." có tên ngắn in đậm. Cơ quan ban hành phải là "ỦY BAN NHÂN DÂN THÀNH PHỐ MẪU" (một khối), không tách thành chủ quản + ban hành.',
+      'Tên loại QUYẾT ĐỊNH + trích yếu có gạch chân. Dòng CHỦ TỊCH … in đậm giữa trang, các dòng Căn cứ và dòng "Theo đề nghị của …," in nghiêng, "QUYẾT ĐỊNH:" in đậm giữa. "Điều N." có tên ngắn in đậm. Cơ quan ban hành phải là "ỦY BAN NHÂN DÂN THÀNH PHỐ MẪU" (một khối), không tách thành chủ quản + ban hành.',
     lines: [
       'ỦY BAN NHÂN DÂN',
       'THÀNH PHỐ MẪU',
@@ -72,7 +72,7 @@ export const TEST_DOCS: TestDoc[] = [
     file: '03-quy-che-co-chuong-dieu',
     title: 'Quy chế đính kèm (Chương, Điều có tên, khoản 1. a))',
     expect:
-      '"Chương I" và tên chương in đậm giữa trang. "Điều 1. Phạm vi điều chỉnh" in đậm. Các khoản "1." "2." là đoạn thường (không in đậm), "a)" là đoạn thường. Quy chế không có cơ quan ban hành nên sẽ có cảnh báo thiếu thông tin.',
+      '"Chương I" và tên chương in đậm giữa trang. dòng "(Ban hành kèm theo …)" căn giữa, in nghiêng. "Điều 1. Phạm vi điều chỉnh" in đậm. Các khoản "1." "2." là đoạn thường (không in đậm), "a)" là đoạn thường. Quy chế không có cơ quan ban hành nên sẽ có cảnh báo thiếu thông tin.',
     lines: [
       'QUY CHẾ',
       'Quản lý và sử dụng phòng họp trực tuyến',

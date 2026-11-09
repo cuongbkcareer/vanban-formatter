@@ -45,6 +45,7 @@
   "body": {
     "paragraph": { "align": "justify" },
     "basis": { "italicFor": ["Quyết định", "Nghị quyết"] },
+    "note": { "italic": true, "align": "center", "spaceBeforePt": 6 },
     "authority": { "bold": true, "caps": true, "align": "center", "spaceBeforePt": 6 },
     "enact": { "bold": true, "align": "center", "spaceBeforePt": 6 },
     "chapter": { "bold": true, "caps": true, "align": "center", "spaceBeforePt": 6 },

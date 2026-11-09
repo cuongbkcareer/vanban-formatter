@@ -50,6 +50,7 @@ export type Label =
   | 'authority'
   | 'basis'
   | 'enact'
+  | 'attachment-note'
   | 'chapter'
   | 'chapter-title'
   | 'article'
@@ -79,6 +80,7 @@ export const LABEL_NAMES: Record<Label, string> = {
   authority: 'Thẩm quyền ban hành',
   basis: 'Căn cứ',
   enact: 'Từ "QUYẾT ĐỊNH:"',
+  'attachment-note': 'Ghi chú "(Ban hành kèm theo…)"',
   chapter: 'Chương',
   'chapter-title': 'Tên chương',
   article: 'Điều',
@@ -121,6 +123,7 @@ export interface Options {
 
 export type BodyKind =
   | 'paragraph'
+  | 'note'
   | 'authority'
   | 'basis'
   | 'enact'

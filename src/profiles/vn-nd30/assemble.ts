@@ -78,6 +78,9 @@ export function assemble(lines: LabeledLine[], opts: Options = {}): Model {
       case 'enact':
         m.body.push({ kind: 'enact', text: toUpperVi(text.replace(/[:：]\s*$/, '')) + ':' });
         break;
+      case 'attachment-note':
+        m.body.push({ kind: 'note', text });
+        break;
       case 'authority':
       case 'chapter':
       case 'chapter-title':

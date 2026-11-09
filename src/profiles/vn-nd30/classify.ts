@@ -24,6 +24,9 @@ const RE_NUMBER = /^Số\s*[:：]\s*\S.*$|^Số\s*[:：]\s*$|^Số\s+\d+\s*\/\S*
 const RE_VV = /^(V\/v|Về\s+việc)\s*[:.]?\s*(.*)$/iu;
 const RE_KINH_GUI = /^Kính\s+gửi\s*[:：]?\s*(.*)$/iu;
 const RE_BASIS = /^Căn\s+cứ\s+\S/iu;
+/** Dòng "Theo đề nghị…," / "Xét đề nghị…," nằm ngay sau các dòng Căn cứ cũng thuộc phần căn cứ (in nghiêng). */
+const RE_BASIS_TAIL = /^(Theo|Xét)\s+\S.*[,;]$/iu;
+const RE_ATTACH_NOTE = /^\(\s*(Ban\s+hành\s+kèm\s+theo|Kèm\s+theo)[^)]*\)\s*\.?$/iu;
 const RE_CHAPTER = /^Chương\s+([IVXLC]+|\d+)\b\s*[.:]?\s*(.*)$/iu;
 const RE_ARTICLE = /^Điều\s+\d+\s*([.:]|$)/iu;
 const RE_BULLET = /^[-–—+•*]\s*/u;
@@ -185,6 +188,12 @@ function looksLikeOrg(line: string, position: number): { ok: boolean; confidence
   return { ok: false, confidence: 0 };
 }
 
+/** "ỦY BAN NHÂN DÂN THÀNH PHỐ MẪU" -> ["ỦY BAN NHÂN DÂN", "THÀNH PHỐ MẪU"] (ngắt dòng đúng chỗ khi in). */
+export function splitAgencyName(text: string): string[] {
+  const m = /^(ỦY\s+BAN\s+NHÂN\s+DÂN|HỘI\s+ĐỒNG\s+NHÂN\s+DÂN)\s+(.+)$/iu.exec(text.trim());
+  return m && RE_GEO_START.test(m[2] ?? '') ? [(m[1] ?? '').trim(), (m[2] ?? '').trim()] : [text];
+}
+
 export function classify(raw: string): LabeledLine[] {
   const lines = joinHardWraps(splitHeaderColumns(normalizeText(raw)));
   const tail = detectTail(lines);
@@ -195,7 +204,7 @@ export function classify(raw: string): LabeledLine[] {
   let zone: 'header' | 'body' = 'header';
   let addr: 'none' | 'expect-first' | 'bullets' = 'none';
   let chapterTitleNext = false;
-  const seen = { docType: false, subject: false, number: false, date: false, basis: false };
+  const seen = { docType: false, subject: false, number: false, date: false, basis: false, enact: false };
 
   const push = (label: Label, text: string, confidence = 0.95, note?: string): void => {
     out.push(note ? { label, text, confidence, note } : { label, text, confidence });
@@ -264,10 +273,16 @@ export function classify(raw: string): LabeledLine[] {
     const exact = RE_TYPE_EXACT.exec(line);
     if (exact && seen.basis && (seen.docType || exact[2])) {
       push('enact', line, 0.9);
+      seen.enact = true;
       continue;
     }
 
-    if (RE_BASIS.test(line)) {
+    if (RE_ATTACH_NOTE.test(line)) {
+      push('attachment-note', line, 0.9);
+      continue;
+    }
+
+    if (RE_BASIS.test(line) || (seen.basis && !seen.enact && RE_BASIS_TAIL.test(line))) {
       push('basis', line, 0.9);
       seen.basis = true;
       zone = 'body';
